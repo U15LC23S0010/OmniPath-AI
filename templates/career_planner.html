@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Career Planner{% endblock %}
+{% block page_title %}Career Planner Agent{% endblock %}
+{% block page_breadcrumb %}Planning / Career Planner{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Discover Your Ideal Career Path</h1>
+    <p>Our AI analyzes your interests, education, and market data to recommend the best roles for you.</p>
+</div>
+
+<div class="card mb-32" id="inputSection">
+    <div class="flex items-center gap-12 mb-24">
+        <div class="agent-avatar" style="background: rgba(124, 58, 237, 0.15); color: var(--violet-light);">
+            <i data-lucide="compass"></i>
+        </div>
+        <div>
+            <h3 class="card-title" style="margin: 0;">Career Planner Agent</h3>
+            <div class="text-sm text-muted">Ready to analyze your profile</div>
+        </div>
+    </div>
+
+    <form id="plannerForm">
+        <div class="form-group">
+            <label class="form-label">What do you enjoy doing most? (Keywords)</label>
+            <input type="text" class="form-control" id="cpInterests" placeholder="e.g., coding, designing, analyzing data, talking to people">
+        </div>
+        <button type="button" class="btn btn-primary" onclick="generatePlan()">
+            <i data-lucide="cpu"></i> Generate Career Recommendations
+        </button>
+    </form>
+</div>
+
+<!-- Results Section -->
+<div id="resultsSection" class="result-section">
+    <div class="ai-response visible mb-32">
+        <div class="ai-response-header"><i data-lucide="sparkles"></i> AI Analysis Complete</div>
+        <p id="aiRecommendation"></p>
+    </div>
+
+    <h3 class="section-title mb-16">Top Recommended Roles</h3>
+    <div class="grid-3 mb-32" id="pathsContainer">
+        <!-- Rendered via JS -->
+    </div>
+
+    <div class="card">
+        <h3 class="card-title"><i data-lucide="check-square" class="text-violet-light"></i> Next Steps</h3>
+        <div class="timeline mt-24" id="nextStepsContainer">
+            <!-- Rendered via JS -->
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function generatePlan() {
+        const interestsInput = document.getElementById('cpInterests').value;
+        const profileAdd = {};
+        if (interestsInput) {
+            profileAdd.interests = interestsInput.split(',').map(s => s.trim());
+        }
+
+        window.showLoader("Agent is analyzing market data and your profile...");
+
+        fetch('/api/career-plan', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(profileAdd)
+        })
+        .then(res => res.json())
+        .then(data => {
+            window.hideLoader();
+            document.getElementById('inputSection').classList.add('hidden');
+            document.getElementById('resultsSection').classList.add('visible');
+
+            document.getElementById('aiRecommendation').innerText = data.recommendation;
+
+            const pathsCont = document.getElementById('pathsContainer');
+            pathsCont.innerHTML = '';
+            data.paths.forEach((path, idx) => {
+                pathsCont.innerHTML += `
+                    <div class="card" style="display: flex; flex-direction: column;">
+                        <div class="flex justify-between items-center mb-16">
+                            <div class="badge ${idx === 0 ? 'badge-gold' : 'badge-violet'}">${path.match}% Match</div>
+                            <div class="text-xs text-green fw-600"><i data-lucide="trending-up" style="width:12px"></i> ${path.demand} Demand</div>
+                        </div>
+                        <h3 class="card-title">${path.title}</h3>
+                        <p class="text-sm text-muted mb-16" style="flex: 1;">${path.description}</p>
+                        <div class="divider" style="margin: 12px 0;"></div>
+                        <div class="text-sm fw-600 mb-8">Avg Salary: <span class="text-primary">${path.avg_salary}</span></div>
+                        <div class="text-xs text-muted mb-8"><i data-lucide="clock" style="width:12px"></i> Prep time: ${path.timeline}</div>
+                        <div class="mt-16">
+                            <div class="text-xs fw-600 text-muted mb-8">Core Skills:</div>
+                            <div class="flex" style="flex-wrap: wrap; gap: 4px;">
+                                ${path.skills_needed.slice(0, 3).map(s => `<span class="tag">${s}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const stepsCont = document.getElementById('nextStepsContainer');
+            stepsCont.innerHTML = '';
+            data.next_steps.forEach(step => {
+                stepsCont.innerHTML += `
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="text-sm text-primary fw-500">${step}</div>
+                    </div>
+                `;
+            });
+
+            lucide.createIcons();
+        });
+    }
+</script>
+{% endblock %}

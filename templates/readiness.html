@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Career Readiness{% endblock %}
+{% block page_title %}Career Readiness Dashboard{% endblock %}
+{% block page_breadcrumb %}Dashboard / Readiness{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Career Readiness Score</h1>
+    <p>A holistic AI analysis of your employability across 6 critical dimensions.</p>
+</div>
+
+<div class="card mb-32" style="text-align: center; padding: 48px;">
+    <div class="score-big" id="overallScore">--</div>
+    <div class="score-label mt-8" style="font-size: 16px;">Overall Job Readiness</div>
+    <p class="text-muted mt-16" id="readinessMessage">Loading analysis...</p>
+    
+    <div class="mt-24">
+        <span class="badge badge-violet" id="readinessLevel">Analyzing</span>
+    </div>
+</div>
+
+<div class="grid-2 mb-32">
+    <div class="card">
+        <h3 class="card-title">Score Breakdown</h3>
+        <canvas id="radarChart" height="250"></canvas>
+    </div>
+    <div class="card">
+        <h3 class="card-title"><i data-lucide="target" class="text-violet-light"></i> Priority Improvements</h3>
+        <div class="timeline mt-24" id="improvementList">
+            <!-- Populated via JS -->
+            <div class="loader-spinner mx-auto mt-32" style="margin: 32px auto;"></div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <h3 class="card-title"><i data-lucide="award" class="text-gold-light"></i> Core Strengths</h3>
+        <div class="mt-16 flex gap-12" id="strengthList" style="flex-wrap: wrap;">
+            <!-- Populated via JS -->
+        </div>
+    </div>
+</div>
+
+<div class="grid-3">
+    <div class="stat-card">
+        <div class="stat-label">Job Success Prediction</div>
+        <div class="stat-value text-green" id="successPrediction">--%</div>
+        <div class="stat-change text-muted mt-8">Based on current metrics</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Missing Core Skills</div>
+        <div class="stat-value text-red" id="missingSkills">--</div>
+        <div class="stat-change text-muted mt-8">Identify in Skill Gap tool</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">ATS Optimization</div>
+        <div class="stat-value text-cyan" id="atsMetric">--</div>
+        <div class="stat-change text-muted mt-8">Check Resume Studio</div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    Chart.defaults.color = '#94A3B8';
+    Chart.defaults.font.family = 'Inter';
+
+    window.showLoader("Generating Readiness Report...");
+
+    fetch('/api/readiness')
+        .then(res => res.json())
+        .then(data => {
+            window.hideLoader();
+            
+            // Populate basic stats
+            document.getElementById('overallScore').innerText = data.overall;
+            document.getElementById('readinessMessage').innerText = data.message;
+            document.getElementById('readinessLevel').innerHTML = `<i data-lucide="activity"></i> Level: ${data.level}`;
+            document.getElementById('successPrediction').innerText = data.job_success_prediction + '%';
+            document.getElementById('atsMetric').innerText = data.ats_score + '/100';
+            
+            // Pop lists
+            const impList = document.getElementById('improvementList');
+            impList.innerHTML = '';
+            data.improvements.forEach(imp => {
+                impList.innerHTML += `
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <div class="text-sm text-primary fw-500">${imp}</div>
+                </div>`;
+            });
+
+            const strList = document.getElementById('strengthList');
+            strList.innerHTML = '';
+            data.strengths.forEach(str => {
+                strList.innerHTML += `<span class="badge badge-green">${str}</span>`;
+            });
+            
+            lucide.createIcons();
+
+            // Radar Chart
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['ATS / Resume', 'Skill Match', 'Career Clarity', 'Portfolio', 'Interviewing', 'Communication'],
+                    datasets: [{
+                        label: 'Readiness Profile',
+                        data: [
+                            data.ats_score,
+                            data.skill_score,
+                            data.career_score,
+                            data.portfolio_score,
+                            data.interview_score,
+                            data.communication_score
+                        ],
+                        backgroundColor: 'rgba(124, 58, 237, 0.2)',
+                        borderColor: '#7C3AED',
+                        pointBackgroundColor: '#06B6D4',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#06B6D4',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                            pointLabels: { color: '#F1F5F9', font: { size: 12 } },
+                            ticks: { display: false, min: 0, max: 100 }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        });
+</script>
+{% endblock %}

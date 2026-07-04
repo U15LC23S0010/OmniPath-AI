@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}LinkedIn Optimizer{% endblock %}
+{% block page_title %}LinkedIn Optimizer Agent{% endblock %}
+{% block page_breadcrumb %}Assets / LinkedIn Optimizer{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>LinkedIn Profile Optimizer</h1>
+    <p>Generate highly engaging headlines, summaries, and networking messages tailored for recruiters.</p>
+</div>
+
+<div class="grid-2">
+    <div class="card">
+        <h3 class="card-title mb-24"><i data-lucide="linkedin" class="text-cyan-light"></i> Optimization Settings</h3>
+        <div class="form-group">
+            <label class="form-label">Target Role</label>
+            <input type="text" class="form-control" id="liRole" placeholder="e.g., Senior UX Designer">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Current LinkedIn URL (Optional)</label>
+            <input type="url" class="form-control" id="liUrl" placeholder="https://linkedin.com/in/yourname">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Top 3 Skills (Comma separated)</label>
+            <input type="text" class="form-control" id="liSkills" placeholder="e.g., Figma, User Research, Wireframing">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Biggest Professional Achievement</label>
+            <input type="text" class="form-control" id="liAchieve" placeholder="e.g., Redesigned main app increasing retention by 20%">
+        </div>
+        <button class="btn btn-primary w-full mt-8" onclick="generateLinkedIn()" style="justify-content:center;">
+            <i data-lucide="wand-2"></i> Generate Profile Sections
+        </button>
+    </div>
+
+    <div class="card" style="background: rgba(124, 58, 237, 0.05);">
+        <h3 class="card-title mb-16"><i data-lucide="lightbulb" class="text-gold-light"></i> Pro Tips for LinkedIn</h3>
+        <ul class="text-sm text-muted" style="padding-left:20px; line-height: 1.8;" id="liTips">
+            <li>Generate your profile sections first to see personalized tips here.</li>
+        </ul>
+    </div>
+</div>
+
+<div id="resultsSection" class="result-section mt-32">
+    <div class="card mb-24" style="position: relative;">
+        <h3 class="card-title">Profile Headline</h3>
+        <button class="copy-btn" onclick="copyText('outHeadline')">Copy</button>
+        <div class="output-box mt-12 fw-600" id="outHeadline" style="min-height: 40px; font-size:16px;"></div>
+    </div>
+
+    <div class="card mb-24" style="position: relative;">
+        <h3 class="card-title">About Section (Summary)</h3>
+        <button class="copy-btn" onclick="copyText('outAbout')">Copy</button>
+        <div class="output-box mt-12" id="outAbout"></div>
+    </div>
+
+    <div class="grid-2 gap-24">
+        <div class="card" style="position: relative;">
+            <h3 class="card-title text-sm"><i data-lucide="message-square" class="text-green-light"></i> Cold Outreach Message</h3>
+            <button class="copy-btn" onclick="copyText('outConn')">Copy</button>
+            <div class="output-box mt-12 text-sm" id="outConn"></div>
+        </div>
+        <div class="card" style="position: relative;">
+            <h3 class="card-title text-sm"><i data-lucide="send" class="text-violet-light"></i> Recruiter Message</h3>
+            <button class="copy-btn" onclick="copyText('outRec')">Copy</button>
+            <div class="output-box mt-12 text-sm" id="outRec"></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function generateLinkedIn() {
+        const role = document.getElementById('liRole').value;
+        if(!role) return window.showToast("Please provide a target role", "error");
+
+        window.showLoader("Optimizing profile content for LinkedIn's algorithm...");
+
+        fetch('/api/linkedin', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                target_role: role,
+                linkedin_url: document.getElementById('liUrl').value,
+                skills: document.getElementById('liSkills').value,
+                achievements: document.getElementById('liAchieve').value
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            window.hideLoader();
+            document.getElementById('resultsSection').classList.add('visible');
+
+            document.getElementById('outHeadline').innerText = data.headline;
+            document.getElementById('outAbout').innerText = data.about;
+            document.getElementById('outConn').innerText = data.connection_message;
+            document.getElementById('outRec').innerText = data.recruiter_message;
+            
+            document.getElementById('liTips').innerHTML = data.tips.map(t => `<li>${t}</li>`).join('');
+            
+            window.showToast("Profile sections generated successfully", "success");
+        });
+    }
+
+    function copyText(elementId) {
+        const text = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(text);
+        window.showToast("Copied to clipboard", "success");
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        prefillFromProfile({
+            role: 'liRole',
+            linkedin: 'liUrl',
+            skills: 'liSkills',
+            achievement: 'liAchieve'
+        });
+    });
+</script>
+{% endblock %}

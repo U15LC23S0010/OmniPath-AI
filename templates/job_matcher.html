@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Job Matcher{% endblock %}
+{% block page_title %}Job Matching Agent{% endblock %}
+{% block page_breadcrumb %}Jobs & Interviews / Job Matcher{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Find Your Perfect Match</h1>
+    <p>Our AI scans thousands of listings and scores them against your resume and skills to find the highest probability matches.</p>
+</div>
+
+<div class="grid-2 mb-32">
+    <div class="card">
+        <h3 class="card-title mb-16"><i data-lucide="sliders"></i> Match Preferences</h3>
+        <div class="grid-2 gap-16 mb-16">
+            <div class="form-group mb-0">
+                <label class="form-label">Target Role</label>
+                <input type="text" class="form-control" id="jmRole" placeholder="e.g. Frontend Developer">
+            </div>
+            <div class="form-group mb-0">
+                <label class="form-label">Upload Resume (PDF)</label>
+                <input type="file" class="form-control" id="jmResume" accept=".pdf">
+            </div>
+        </div>
+        <div class="grid-2 gap-16">
+            <div class="form-group mb-0">
+                <label class="form-label">Location Preference</label>
+                <select class="form-control" id="jmRemote">
+                    <option value="any">Open to Any</option>
+                    <option value="remote">Fully Remote</option>
+                    <option value="hybrid">Hybrid</option>
+                    <option value="onsite">On-Site Only</option>
+                </select>
+            </div>
+            <div class="form-group mb-0">
+                <label class="form-label">Min Salary</label>
+                <input type="number" class="form-control" id="jmSalary" placeholder="e.g. 80000">
+            </div>
+        </div>
+        <button class="btn btn-primary mt-24" onclick="findJobs()"><i data-lucide="search"></i> Find Matching Jobs</button>
+    </div>
+
+    <div class="stat-card" style="justify-content: center;">
+        <div class="stat-label">AI Matching Pipeline</div>
+        <div class="flex items-center gap-12 mt-12 text-sm fw-500">
+            <div class="text-muted text-center"><i data-lucide="file-text" class="text-gold-light mb-4"></i><br>Resume parsed</div>
+            <i data-lucide="arrow-right" class="text-muted" style="width:16px;"></i>
+            <div class="text-muted text-center"><i data-lucide="briefcase" class="text-cyan-light mb-4"></i><br>Jobs scanned</div>
+            <i data-lucide="arrow-right" class="text-muted" style="width:16px;"></i>
+            <div class="text-primary text-center"><i data-lucide="target" class="text-violet-light mb-4"></i><br>Scores calculated</div>
+        </div>
+    </div>
+</div>
+
+<div id="resultsSection" class="result-section">
+    <div class="flex justify-between items-center mb-16">
+        <h2 class="section-title" style="margin:0;" id="matchSummary">Top Matches</h2>
+        <div class="text-sm text-muted">Sorted by Match Score</div>
+    </div>
+
+    <div class="flex flex-col gap-16" id="jobsList">
+        <!-- Rendered via JS -->
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function findJobs() {
+        const role = document.getElementById('jmRole').value;
+        const remote = document.getElementById('jmRemote').value;
+        const salary = document.getElementById('jmSalary').value;
+        const fileInput = document.getElementById('jmResume');
+
+        if(!role) return window.showToast("Please enter a Target Role.", "error");
+        if(fileInput.files.length === 0) return window.showToast("Please upload a PDF resume.", "error");
+
+        const formData = new FormData();
+        formData.append('resume', fileInput.files[0]);
+        formData.append('role', role);
+        formData.append('remote', remote);
+        formData.append('salary_min', salary || '0');
+
+        window.showLoader("Agent is scanning job boards and calculating match scores...");
+
+        fetch('/api/match-jobs', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            window.hideLoader();
+            document.getElementById('resultsSection').classList.add('visible');
+            document.getElementById('matchSummary').innerText = data.summary;
+
+            const list = document.getElementById('jobsList');
+            list.innerHTML = '';
+            
+            data.jobs.forEach(job => {
+                let matchClass = job.match >= 90 ? 'badge-gold' : (job.match >= 80 ? 'badge-violet' : 'badge-cyan');
+                
+                list.innerHTML += `
+                    <div class="job-card flex justify-between items-center" style="flex-wrap:wrap; gap:16px;">
+                        <div style="flex: 1; min-width: 300px;">
+                            <div class="flex items-center gap-12 mb-8">
+                                <h3 class="card-title text-primary" style="margin:0; font-size:18px;">${job.title}</h3>
+                                <div class="badge ${matchClass}"><i data-lucide="zap" style="width:12px;"></i> ${job.match}% Match</div>
+                            </div>
+                            <div class="text-sm fw-600 text-cyan-light mb-8">${job.company} <span style="color:var(--muted); font-weight:400;">via ${job.platform}</span></div>
+                            <div class="flex gap-16 text-xs text-muted mb-12">
+                                <span class="flex items-center gap-4"><i data-lucide="map-pin" style="width:14px;"></i> ${job.location}</span>
+                                <span class="flex items-center gap-4"><i data-lucide="briefcase" style="width:14px;"></i> ${job.remote}</span>
+                                <span class="flex items-center gap-4"><i data-lucide="dollar-sign" style="width:14px;"></i> ${job.salary}</span>
+                            </div>
+                            <p class="text-sm text-muted mb-12">${job.description}</p>
+                            <div class="flex gap-8">
+                                ${job.tags.map(t => `<span class="tag tag-green">${t}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-12" style="width: 150px;">
+                            <button class="btn btn-primary w-full" style="justify-content:center;" onclick="showToast('Application sent to human review queue.', 'success')">Easy Apply</button>
+                            <button class="btn btn-secondary w-full" style="justify-content:center;">Tailor Resume</button>
+                            <div class="text-xs text-muted text-center">Posted ${job.posted} days ago</div>
+                        </div>
+                    </div>
+                `;
+            });
+            lucide.createIcons();
+        });
+    }
+</script>
+{% endblock %}

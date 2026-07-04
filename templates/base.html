@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmniPath AI | {% block title %}{% endblock %}</title>
+    <meta name="description" content="OmniPath AI - Your Autonomous AI Career Team across all sectors">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#7c3aed">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="OmniPath AI">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<!-- Global Loader Overlay -->
+<div id="globalLoader" class="global-loader hidden">
+    <div class="loader-content">
+        <div class="loader-spinner"></div>
+        <div class="loader-text" id="loaderText">Processing...</div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toastContainer" class="toast-container"></div>
+
+<div class="layout-wrapper">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <i data-lucide="hexagon" style="width:28px;height:28px;"></i>
+            <span>OmniPath AI</span>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-label">Core</div>
+            <a href="/dashboard" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+            <a href="/onboarding" class="nav-link"><i data-lucide="user"></i><span>My Profile</span></a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-label">Career Agents</div>
+            <a href="/career-recovery" class="nav-link"><i data-lucide="activity"></i><span>Career Recovery</span></a>
+            <a href="/resume-studio" class="nav-link"><i data-lucide="file-text"></i><span>Resume Studio</span></a>
+            <a href="/skill-gap" class="nav-link"><i data-lucide="bar-chart-2"></i><span>Skill Gap Analyzer</span></a>
+            <a href="/learning-roadmap" class="nav-link"><i data-lucide="map"></i><span>Learning Roadmap</span></a>
+            <a href="/portfolio-builder" class="nav-link"><i data-lucide="briefcase"></i><span>Project & Portfolio Engine</span></a>
+            <a href="/interview-coach" class="nav-link"><i data-lucide="mic"></i><span>Interview Coach</span></a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-label">Job Search & Recovery</div>
+            <a href="/job-matcher" class="nav-link"><i data-lucide="search"></i><span>Job Matcher</span></a>
+            <a href="/salary-intelligence" class="nav-link"><i data-lucide="dollar-sign"></i><span>Salary Intel</span></a>
+            <a href="/linkedin-optimizer" class="nav-link"><i data-lucide="linkedin"></i><span>LinkedIn Optimizer</span></a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-label">System</div>
+            <a href="/mcp-hub" class="nav-link"><i data-lucide="server"></i><span>MCP Hub</span></a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="topbar">
+            <div class="page-info">
+                <h2 class="page-title">{% block page_title %}OmniPath AI{% endblock %}</h2>
+                <div class="breadcrumb">OmniPath AI / {% block page_breadcrumb %}{% endblock %}</div>
+            </div>
+        </div>
+
+        <div class="content-body">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Initialize icons
+    lucide.createIcons();
+
+    // Highlight active nav link
+    document.querySelectorAll('.nav-link').forEach(link => {
+        if(link.href === window.location.href) {
+            link.classList.add('active');
+        }
+    });
+
+    // Global Loader
+    window.showLoader = function(text) {
+        document.getElementById('loaderText').innerText = text || 'Processing...';
+        document.getElementById('globalLoader').classList.remove('hidden');
+    };
+    window.hideLoader = function() {
+        document.getElementById('globalLoader').classList.add('hidden');
+    };
+
+    // Toast notification
+    window.showToast = function(message, type) {
+        const toast = document.createElement('div');
+        toast.className = 'toast toast-' + (type || 'info');
+        toast.innerHTML = `<i data-lucide="${type === 'error' ? 'x-circle' : 'check-circle'}"></i> ${message}`;
+        document.getElementById('toastContainer').appendChild(toast);
+        lucide.createIcons();
+        setTimeout(() => toast.remove(), 4000);
+    };
+
+    // PWA Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(console.error);
+    }
+
+    // PWA install prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        deferredPrompt = e;
+        const toast = document.createElement('div');
+        toast.className = 'toast toast-info pwa-toast';
+        toast.innerHTML = `<i data-lucide="download"></i> <span>Install OmniPath App</span> <button onclick="installPWA()" style="background:var(--violet);border:none;color:#fff;padding:4px 10px;border-radius:4px;cursor:pointer;margin-left:10px;">Install</button>`;
+        document.getElementById('toastContainer').appendChild(toast);
+        lucide.createIcons();
+    });
+    window.installPWA = function() {
+        if(deferredPrompt) { deferredPrompt.prompt(); }
+    };
+</script>
+
+{% block scripts %}{% endblock %}
+
+<script>
+    // ── Global Profile Prefill Engine ──────────────────────────────
+    // Called by individual agent pages to auto-fill their forms
+    // from the profile stored in localStorage during onboarding.
+    //
+    // Usage: prefillFromProfile({ role: 'salRole', skills: 'liSkills' });
+    // Keys are profile fields; values are input element IDs on the page.
+    window.prefillFromProfile = function(mapping) {
+        const profile = JSON.parse(localStorage.getItem('omnipath_profile') || '{}');
+        if (!profile || Object.keys(profile).length === 0) return;
+        Object.entries(mapping).forEach(([profileKey, elementId]) => {
+            const el = document.getElementById(elementId);
+            const val = profile[profileKey];
+            if (el && val) {
+                if (el.tagName === 'SELECT') {
+                    // Try to match by value
+                    const opt = Array.from(el.options).find(o => o.value === val || o.value.toLowerCase() === val.toLowerCase());
+                    if (opt) el.value = opt.value;
+                } else {
+                    el.value = val;
+                }
+            }
+        });
+    };
+</script>
+
+</body>
+</html>

@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Interview Coach{% endblock %}
+{% block page_title %}Interview Coach Agent{% endblock %}
+{% block page_breadcrumb %}Jobs & Interviews / Interview Coach{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Master Your Next Interview</h1>
+    <p>Practice with our AI interviewer. Get real-time feedback on your answers, structure, and impact.</p>
+</div>
+
+<div class="grid-2">
+    <!-- Configuration -->
+    <div class="card" id="configSection">
+        <h3 class="card-title mb-24"><i data-lucide="settings" class="text-violet-light"></i> Session Setup</h3>
+        
+        <div class="grid-2 gap-12">
+            <div class="form-group">
+                <label class="form-label">Target Role</label>
+                <input type="text" class="form-control" id="ivRole" placeholder="e.g., Data Scientist">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Experience</label>
+                <select class="form-control" id="ivExperience">
+                    <option value="junior">Junior (0-2 yrs)</option>
+                    <option value="mid" selected>Mid-Level (3-5 yrs)</option>
+                    <option value="senior">Senior (6+ yrs)</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Interview Type</label>
+            <div class="grid-2 gap-12 mt-8">
+                <label class="checkbox-pill selected" id="type_behavioral" onclick="setType('behavioral')">
+                    <i data-lucide="users" style="width:16px;"></i> Behavioral
+                </label>
+                <label class="checkbox-pill" id="type_technical" onclick="setType('technical')">
+                    <i data-lucide="cpu" style="width:16px;"></i> Technical
+                </label>
+                <label class="checkbox-pill" id="type_hr" onclick="setType('hr')">
+                    <i data-lucide="briefcase" style="width:16px;"></i> HR / Culture
+                </label>
+                <label class="checkbox-pill" id="type_coding" onclick="setType('coding')">
+                    <i data-lucide="code" style="width:16px;"></i> Coding
+                </label>
+            </div>
+        </div>
+
+        <button class="btn btn-primary w-full mt-16" onclick="startInterview()" style="justify-content:center;">
+            Start Mock Interview
+        </button>
+    </div>
+
+    <!-- Active Interview (Hidden initially) -->
+    <div class="card hidden" id="activeSection" style="display: flex; flex-direction: column;">
+        <div class="flex justify-between items-center mb-16 pb-16" style="border-bottom: 1px solid var(--border);">
+            <div class="flex items-center gap-12">
+                <div class="agent-avatar" style="background: rgba(124, 58, 237, 0.15); color: var(--violet-light); width: 36px; height: 36px;">
+                    <i data-lucide="mic"></i>
+                </div>
+                <div class="fw-600">AI Interviewer</div>
+            </div>
+            <div class="badge badge-violet" id="qCounter">Q 1 / 8</div>
+        </div>
+
+        <div class="chat-window mb-24" id="chatWindow" style="flex: 1;">
+            <!-- Chat history injected here -->
+        </div>
+
+        <div id="answerArea">
+            <textarea class="form-control mb-12" id="userAnswer" style="min-height: 100px;" placeholder="Type your answer here using the STAR method..."></textarea>
+            <div class="flex justify-between items-center">
+                <div class="text-xs text-muted"><i data-lucide="info" style="width:12px; margin-bottom:-2px;"></i> Tip: <span id="qTip"></span></div>
+                <button class="btn btn-primary" onclick="submitAnswer()">Submit Answer <i data-lucide="send"></i></button>
+            </div>
+        </div>
+        
+        <!-- Result Overlay -->
+        <div id="evalArea" class="hidden mt-16" style="background: var(--bg-deep); border-radius: var(--radius-sm); padding: 16px; border: 1px solid var(--border);">
+            <div class="flex justify-between items-center mb-12">
+                <h4 class="fw-700 text-primary">Answer Analysis</h4>
+                <div class="badge badge-gold" id="evalScore">Score: --</div>
+            </div>
+            
+            <div class="grid-2 gap-12 mb-16">
+                <div>
+                    <div class="text-xs fw-600 text-green mb-8"><i data-lucide="check" style="width:12px;"></i> Strengths</div>
+                    <ul class="text-sm text-muted" id="evalStrengths" style="padding-left:16px;"></ul>
+                </div>
+                <div>
+                    <div class="text-xs fw-600 text-red mb-8"><i data-lucide="x" style="width:12px;"></i> Improvements</div>
+                    <ul class="text-sm text-muted" id="evalImprovements" style="padding-left:16px;"></ul>
+                </div>
+            </div>
+            
+            <button class="btn btn-secondary w-full" style="justify-content:center;" onclick="nextQuestion()" id="nextBtn">Next Question</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentType = 'behavioral';
+    let currentRole = '';
+    let currentExperience = 'mid';
+    let currentQNum = 1;
+    let currentQuestion = '';
+
+    function setType(type) {
+        currentType = type;
+        document.querySelectorAll('.checkbox-pill').forEach(el => el.classList.remove('selected'));
+        document.getElementById('type_' + type).classList.add('selected');
+    }
+
+    function startInterview() {
+        currentRole = document.getElementById('ivRole').value;
+        currentExperience = document.getElementById('ivExperience').value;
+        if(!currentRole) return window.showToast('Please enter a target role', 'error');
+
+        document.getElementById('configSection').classList.add('hidden');
+        document.getElementById('activeSection').classList.remove('hidden');
+        
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        document.getElementById('answerArea').classList.remove('hidden');
+        document.getElementById('evalArea').classList.add('hidden');
+        document.getElementById('userAnswer').value = '';
+
+        window.showLoader('Interviewer is thinking...');
+
+        fetch('/api/interview-question', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                type: currentType, 
+                role: currentRole, 
+                experience: currentExperience,
+                question_num: currentQNum
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            window.hideLoader();
+            currentQuestion = data.question;
+            
+            document.getElementById('qCounter').innerText = `Q ${data.number} / ${data.total}`;
+            document.getElementById('qTip').innerText = data.tips;
+
+            const chat = document.getElementById('chatWindow');
+            chat.innerHTML += `
+                <div class="chat-bubble ai">
+                    <div class="fw-600 mb-4 text-violet-light" style="font-size:12px;">Interviewer</div>
+                    ${data.question}
+                </div>
+            `;
+            chat.scrollTop = chat.scrollHeight;
+        });
+    }
+
+    function submitAnswer() {
+        const answer = document.getElementById('userAnswer').value;
+        if(!answer) return window.showToast('Please type an answer', 'error');
+
+        const chat = document.getElementById('chatWindow');
+        chat.innerHTML += `
+            <div class="chat-bubble user">
+                <div class="fw-600 mb-4 text-cyan-light" style="font-size:12px;">You</div>
+                ${answer}
+            </div>
+        `;
+        chat.scrollTop = chat.scrollHeight;
+
+        document.getElementById('answerArea').classList.add('hidden');
+        window.showLoader('Analyzing your response...');
+
+        fetch('/api/evaluate-answer', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({question: currentQuestion, answer: answer, type: currentType})
+        })
+        .then(res => res.json())
+        .then(data => {
+            window.hideLoader();
+            document.getElementById('evalArea').classList.remove('hidden');
+            
+            document.getElementById('evalScore').innerText = `Score: ${data.score}/100`;
+            document.getElementById('evalStrengths').innerHTML = data.strengths.map(s => `<li>${s}</li>`).join('');
+            document.getElementById('evalImprovements').innerHTML = data.improvements.map(s => `<li>${s}</li>`).join('');
+            
+            lucide.createIcons();
+            chat.scrollTop = chat.scrollHeight;
+        });
+    }
+
+    function nextQuestion() {
+        currentQNum++;
+        loadQuestion();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        prefillFromProfile({ role: 'ivRole', experience: 'ivExperience' });
+    });
+</script>
+{% endblock %}

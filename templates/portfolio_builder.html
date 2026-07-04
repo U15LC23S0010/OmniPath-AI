@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Project & Portfolio Engine{% endblock %}
+{% block page_title %}Project & Portfolio Engine{% endblock %}
+{% block page_breadcrumb %}Project & Portfolio Engine{% endblock %}
+
+{% block content %}
+<div class="page-header" style="text-align: center; margin-bottom: 40px;">
+    <h1 class="page-title text-gradient" style="font-size: 32px;">Project & Portfolio Engine</h1>
+    <p class="text-muted">Stand out to recruiters with industry-level projects. Our agent will recommend projects and generate complete GitHub READMEs.</p>
+</div>
+
+<div class="card mb-32" id="inputSection">
+    <form id="portfolioForm">
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Target Role</label>
+                <input type="text" class="form-control" id="pbRole" placeholder="e.g., Data Scientist, Frontend Developer">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Difficulty Level</label>
+                <select class="form-control" id="pbLevel">
+                    <option value="beginner">Beginner (1-2 weeks)</option>
+                    <option value="intermediate" selected>Intermediate (2-4 weeks)</option>
+                    <option value="advanced">Advanced (1+ month)</option>
+                </select>
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="generateProjects()">
+            <i data-lucide="layout"></i> Recommend Projects
+        </button>
+    </form>
+</div>
+
+<div id="resultsSection" class="result-section">
+    <div class="section-header">
+        <h2 class="section-title">Recommended Portfolio Projects</h2>
+    </div>
+
+    <div class="grid-3 mb-32" id="projectsContainer">
+        <!-- Rendered via JS -->
+    </div>
+
+    <!-- Readme Modal area -->
+    <div class="card hidden" id="readmeSection">
+        <div class="flex justify-between items-center mb-16">
+            <h3 class="card-title" id="readmeTitle">Generated README.md</h3>
+            <button class="copy-btn" onclick="copyReadme()">Copy Markdown</button>
+        </div>
+        <div class="output-box" id="readmeContent" style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #A78BFA; background: #050510;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentProjects = [];
+
+    function generateProjects() {
+        const role = document.getElementById('pbRole').value;
+        const level = document.getElementById('pbLevel').value;
+        if(!role) return window.showToast('Please enter a target role', 'error');
+
+        window.showLoader("Agent is analyzing industry portfolio trends...");
+
+        fetch('/api/portfolio', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({target_role: role, difficulty: level})
+        })
+        .then(res => res.json())
+        .then(data => {
+            window.hideLoader();
+            currentProjects = data.projects;
+            document.getElementById('inputSection').style.display = 'none';
+            document.getElementById('resultsSection').classList.add('visible');
+
+            const container = document.getElementById('projectsContainer');
+            container.innerHTML = '';
+            
+            data.projects.forEach((proj, idx) => {
+                container.innerHTML += `
+                    <div class="card" style="display:flex; flex-direction:column;">
+                        <h3 class="card-title text-primary" style="font-size: 16px;">${proj.title}</h3>
+                        <div class="badge badge-gold mb-12" style="align-self: flex-start;">${proj.complexity}</div>
+                        <p class="text-sm text-muted mb-16" style="flex:1;">${proj.description}</p>
+                        
+                        <div class="text-xs fw-600 text-muted mb-8">Tech Stack:</div>
+                        <div class="flex flex-wrap gap-8 mb-16">
+                            ${proj.tech_stack.map(t => `<span class="tag tag-cyan" style="font-size:11px;">${t}</span>`).join('')}
+                        </div>
+                        
+                        <div class="text-xs text-muted mb-16"><i data-lucide="clock" style="width:12px;"></i> Est. Time: ${proj.estimated_time}</div>
+                        
+                        <button class="btn btn-secondary w-full" style="justify-content:center;" onclick="viewReadme(${idx})">
+                            <i data-lucide="file-code"></i> View README
+                        </button>
+                    </div>
+                `;
+            });
+            lucide.createIcons();
+        });
+    }
+
+    function viewReadme(idx) {
+        const proj = currentProjects[idx];
+        const section = document.getElementById('readmeSection');
+        section.classList.remove('hidden');
+        document.getElementById('readmeTitle').innerHTML = `<i data-lucide="github"></i> ${proj.slug}/README.md`;
+        document.getElementById('readmeContent').innerText = proj.readme;
+        
+        section.scrollIntoView({behavior: 'smooth', block: 'start'});
+        lucide.createIcons();
+    }
+
+    function copyReadme() {
+        const text = document.getElementById('readmeContent').innerText;
+        navigator.clipboard.writeText(text);
+        window.showToast("README copied to clipboard!", "success");
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        prefillFromProfile({ role: 'pbRole' });
+    });
+</script>
+{% endblock %}

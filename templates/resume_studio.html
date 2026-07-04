@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}Resume Studio{% endblock %}
+{% block page_breadcrumb %}Resume Studio{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title text-gradient">Resume Studio & ATS Analyzer</h1>
+    <p class="text-muted">Upload your PDF resume or paste text to have our agents rewrite and score it for your target role.</p>
+</div>
+
+<div class="grid-auto" style="grid-template-columns: 1fr 1.5fr;">
+    <!-- LEFT PANEL: Upload -->
+    <div class="stat-card">
+        <h3 style="margin-bottom: 20px; color: var(--cyan);"><i data-lucide="upload-cloud" style="display:inline; width:20px;"></i> Input Resume</h3>
+        
+        <label class="stat-label" style="display:block; margin-bottom: 8px;">Target Role</label>
+        <input type="text" id="targetRole" class="form-control" placeholder="e.g. Senior Financial Analyst" style="width: 100%; padding: 12px; border-radius: 8px; background: #0d1117; border: 1px solid #30363d; color: #fff; margin-bottom: 20px;">
+        
+        <div style="border: 2px dashed #30363d; border-radius: 12px; padding: 40px 20px; text-align: center; margin-bottom: 20px; transition: 0.3s;" id="dropzone" onmouseover="this.style.borderColor='var(--violet)'" onmouseout="this.style.borderColor='#30363d'">
+            <i data-lucide="file-text" style="width: 48px; height: 48px; color: #8b949e; margin-bottom: 15px;"></i>
+            <div style="margin-bottom: 15px; color: var(--text-main);">Upload your PDF resume</div>
+            <input type="file" id="resumeFile" accept=".pdf" style="display: none;" onchange="updateFileName()">
+            <button type="button" class="secondary-btn" onclick="document.getElementById('resumeFile').click()">Choose File</button>
+            <div id="fileName" style="margin-top: 10px; font-size: 12px; color: var(--cyan);"></div>
+        </div>
+
+        <button class="primary-btn" onclick="analyzePDF()" style="width: 100%; margin-bottom: 15px;">
+            <i data-lucide="cpu" style="display:inline; width:18px; vertical-align: middle;"></i> Run ATS Analysis
+        </button>
+        <button class="primary-btn" onclick="startDebate()" style="width: 100%; background: linear-gradient(90deg, var(--gold), var(--pink));">
+            <i data-lucide="users" style="display:inline; width:18px; vertical-align: middle;"></i> Start Multi-Agent Debate
+        </button>
+    </div>
+
+    <!-- RIGHT PANEL: Results -->
+    <div class="stat-card" style="min-height: 500px;">
+        <h3 style="margin-bottom: 20px; color: var(--violet);"><i data-lucide="activity" style="display:inline; width:20px;"></i> Agent Intelligence Output</h3>
+        
+        <div id="loader" style="display: none; text-align: center; padding: 40px; color: var(--cyan);">
+            <i data-lucide="loader" class="spin" style="width: 32px; height: 32px; margin-bottom: 15px;"></i>
+            <div>Analyzing resume...</div>
+        </div>
+
+        <div id="results" style="display: none;">
+            <div class="grid-auto" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;">
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--green); padding: 20px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 36px; font-weight: bold; color: var(--green);" id="atsScore">0</div>
+                    <div style="font-size: 12px; color: var(--text-main); text-transform: uppercase;">ATS Match Score</div>
+                </div>
+            </div>
+            
+            <h4 style="color: #fff; margin-bottom: 10px;">Agent Suggestions</h4>
+            <ul id="suggestionsList" style="color: var(--text-main); padding-left: 20px; margin-bottom: 20px; line-height: 1.6;"></ul>
+
+            <h4 style="color: #fff; margin-bottom: 10px;">AI Rewritten Summary</h4>
+            <div id="rewrittenSummary" style="background: #0d1117; padding: 15px; border-radius: 8px; border-left: 3px solid var(--violet); color: var(--text-main); font-style: italic;"></div>
+        </div>
+
+        <div id="debateResults" style="display: none;">
+            <h4 style="color: #fff; margin-bottom: 20px; border-bottom: 1px solid #30363d; padding-bottom: 10px;">Live Agent Debate</h4>
+            <div id="chatBox" style="display: flex; flex-direction: column; gap: 15px;"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function updateFileName() {
+        const file = document.getElementById('resumeFile').files[0];
+        if(file) document.getElementById('fileName').innerText = file.name;
+    }
+
+    function showLoader() {
+        document.getElementById('loader').style.display = 'block';
+        document.getElementById('results').style.display = 'none';
+        document.getElementById('debateResults').style.display = 'none';
+    }
+
+    function analyzePDF() {
+        const file = document.getElementById('resumeFile').files[0];
+        if(!file) { alert("Please upload a PDF first!"); return; }
+        showLoader();
+        
+        let fd = new FormData();
+        fd.append('file', file);
+        fd.append('target_role', document.getElementById('targetRole').value);
+        
+        fetch('/api/upload-resume', {method: 'POST', body: fd})
+            .then(r => r.json()).then(d => {
+                document.getElementById('loader').style.display = 'none';
+                if(d.error) {
+                    alert(d.error);
+                    return;
+                }
+                document.getElementById('results').style.display = 'block';
+                document.getElementById('atsScore').innerText = d.ats_score || 85;
+                document.getElementById('rewrittenSummary').innerText = d.rewritten_summary || 'Optimized summary generated.';
+                
+                const ul = document.getElementById('suggestionsList');
+                ul.innerHTML = '';
+                (d.suggestions || ['Add more metrics to your experience.']).forEach(s => {
+                    let li = document.createElement('li');
+                    li.innerText = s;
+                    ul.appendChild(li);
+                });
+            });
+    }
+
+    function startDebate() {
+        const file = document.getElementById('resumeFile').files[0];
+        if(!file) { alert("Please upload a PDF first!"); return; }
+        showLoader();
+        
+        let fd = new FormData();
+        fd.append('file', file);
+        fd.append('target_role', document.getElementById('targetRole').value);
+
+        fetch('/api/debate-resume', {
+            method: 'POST', body: fd
+        }).then(r => r.json()).then(d => {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('debateResults').style.display = 'block';
+            
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML = '';
+            
+            d.dialogue.forEach(msg => {
+                let div = document.createElement('div');
+                div.style.background = '#0d1117';
+                div.style.border = `1px solid var(--${msg.color || 'cyan'})`;
+                div.style.padding = '15px';
+                div.style.borderRadius = '8px';
+                div.innerHTML = `<strong style="color: var(--${msg.color || 'cyan'}); font-size: 14px;"><i data-lucide="bot" style="width: 14px; display:inline;"></i> ${msg.agent}</strong><div style="margin-top: 8px;">${msg.text}</div>`;
+                chatBox.appendChild(div);
+            });
+            lucide.createIcons();
+        });
+    }
+</script>
+<style>
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .primary-btn {
+        background: linear-gradient(90deg, var(--violet), var(--cyan));
+        color: #fff;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: 0.3s;
+    }
+    .primary-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4); }
+    .secondary-btn {
+        background: #1f2937;
+        color: #fff;
+        border: 1px solid #30363d;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: 0.2s;
+    }
+    .secondary-btn:hover { background: #30363d; }
+</style>
+{% endblock %}

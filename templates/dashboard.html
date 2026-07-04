@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}AI Command Center{% endblock %}
+{% block page_breadcrumb %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+    <div>
+        <h1>Welcome back, <span class="text-gradient">{{ profile.name if profile.name else 'Future Professional' }}</span> 👋</h1>
+        <p class="text-muted">Your AI Career Team is fully initialized. Click any agent below to begin instantly.</p>
+    </div>
+    <a href="/onboarding" class="btn btn-secondary" style="height:40px; padding:0 18px; font-size:13px; justify-content:center;">
+        <i data-lucide="edit-3"></i> Edit Profile
+    </a>
+</div>
+
+<!-- Profile Overview Card -->
+<div class="card mb-32" style="background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(6,182,212,0.05)); border: 1px solid rgba(124,58,237,0.3);">
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:24px;">
+        <div>
+            <div class="text-sm text-muted fw-600" style="text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Target Role</div>
+            <div class="fw-700" style="font-size:16px; color:var(--violet-light);">{{ profile.role if profile.role else 'Not Set' }}</div>
+            <div class="text-sm text-muted mt-4">{{ profile.sector if profile.sector else '' }}</div>
+        </div>
+        <div>
+            <div class="text-sm text-muted fw-600" style="text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Education</div>
+            <div class="fw-700" style="font-size:16px; color:var(--cyan-light);">{{ profile.education | capitalize if profile.education else '—' }}</div>
+            <div class="text-sm text-muted mt-4">{{ profile.experience | capitalize if profile.experience else 'Not Set' }} Exp Level</div>
+        </div>
+        <div>
+            <div class="text-sm text-muted fw-600" style="text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Location</div>
+            <div class="fw-700" style="font-size:16px; color:var(--gold-light);">{{ profile.location if profile.location else '—' }}</div>
+            <div class="text-sm text-muted mt-4">{{ profile.workMode if profile.workMode else '' }}</div>
+        </div>
+        <div>
+            <div class="text-sm text-muted fw-600" style="text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Top Skills</div>
+            <div class="fw-700" style="font-size:13px; color:var(--green-light); line-height:1.6;">{{ profile.skills[:50] + '...' if profile.skills and profile.skills|length > 50 else profile.skills if profile.skills else 'Not Set' }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid-3 mb-32">
+    <div class="stat-card">
+        <div class="stat-label">Career Readiness</div>
+        <div class="stat-value text-gradient" id="readinessScore">--</div>
+        <div class="stat-change up" id="readinessLabel"><i data-lucide="trending-up" style="width: 14px;"></i> Calculating...</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Active MCP Servers</div>
+        <div class="stat-value text-gold">4 / 4</div>
+        <div class="stat-change up"><i data-lucide="server" style="width: 14px;"></i> View Hub</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Profile Complete</div>
+        <div class="stat-value text-green" id="profileScore">--</div>
+        <div class="stat-change up" id="profileLabel"><i data-lucide="check-circle" style="width:14px;"></i> Scanning...</div>
+    </div>
+</div>
+
+<div class="section-header">
+    <h2 class="section-title">Your AI Agent Team</h2>
+    <p class="text-muted text-sm">All agents are pre-loaded with your profile. Click to open — fields will be auto-filled.</p>
+</div>
+
+<div class="grid-auto">
+    <a href="/career-recovery" class="agent-card">
+        <div class="agent-header">
+            <div class="agent-avatar" style="background: rgba(239, 68, 68, 0.15); color: var(--red-light);">
+                <i data-lucide="activity"></i>
+            </div>
+            <div class="agent-info">
+                <div class="agent-name">Career Recovery</div>
+                <div class="agent-desc">Overcome rejections</div>
+            </div>
+        </div>
+        <div class="agent-status"><span class="status-dot"></span> Ready</div>
+    </a>
+
+    <a href="/resume-studio" class="agent-card">
+        <div class="agent-header">
+            <div class="agent-avatar" style="background: rgba(245, 158, 11, 0.15); color: var(--gold-light);">
+                <i data-lucide="file-text"></i>
+            </div>
+            <div class="agent-info">
+                <div class="agent-name">Resume Optimizer &amp; ATS</div>
+                <div class="agent-desc">Resume scoring &amp; rewrites</div>
+            </div>
+        </div>
+        <div class="agent-status"><span class="status-dot"></span> Ready</div>
+    </a>
+
+    <a href="/skill-gap" class="agent-card">
+        <div class="agent-header">
+            <div class="agent-avatar" style="background: rgba(16, 185, 129, 0.15); color: var(--green-light);">
+                <i data-lucide="bar-chart-2"></i>
+            </div>
+            <div class="agent-info">
+                <div class="agent-name">Skill Gap Agent</div>
+                <div class="agent-desc">Market comparison</div>
+            </div>
+        </div>
+        <div class="agent-status"><span class="status-dot"></span> Ready</div>
+    </a>
+
+    <a href="/learning-roadmap" class="agent-card">
+        <div class="agent-header">
+            <div class="agent-avatar" style="background: rgba(6, 182, 212, 0.15); color: var(--cyan-light);">
+                <i data-lucide="map"></i>
+            </div>
+            <div class="agent-info">
+                <div class="agent-name">Learning Roadmap Agent</div>
+                <div class="agent-desc">Personalized curriculum</div>
+            </div>
+        </div>
+        <div class="agent-status"><span class="status-dot"></span> Ready</div>
+    </a>
+
+    <a href="/portfolio-builder" class="agent-card">
+        <div class="agent-header">
+            <div class="agent-avatar" style="background: rgba(239, 68, 68, 0.15); color: var(--red-light);">
+                <i data-lucide="briefcase"></i>
+            </div>
+            <div class="agent-info">
+                <div class="agent-name">Project & Portfolio Engine</div>
+                <div class="agent-desc">Project &amp; GitHub generation</div>
+            </div>
+        </div>
+        <div class="agent-status"><span class="status-dot"></span> Ready</div>
+    </a>
+
+    <a href="/interview-coach" class="agent-card">
+        <div class="agent-header">
+            <div class="agent-avatar" style="background: rgba(124, 58, 237, 0.15); color: var(--violet-light);">
+                <i data-lucide="mic"></i>
+            </div>
+            <div class="agent-info">
+                <div class="agent-name">Interview Coach Agent</div>
+                <div class="agent-desc">Mock interviews &amp; scoring</div>
+            </div>
+        </div>
+        <div class="agent-status"><span class="status-dot"></span> Ready</div>
+    </a>
+
+    <a href="/job-matcher" class="agent-card">
+        <div class="agent-header">
+            <div class="agent-avatar" style="background: rgba(16, 185, 129, 0.15); color: var(--green-light);">
+                <i data-lucide="search"></i>
+            </div>
+            <div class="agent-info">
+                <div class="agent-name">Job Matching Agent</div>
+                <div class="agent-desc">Targeted role finder</div>
+            </div>
+        </div>
+        <div class="agent-status"><span class="status-dot"></span> Ready</div>
+    </a>
+
+    <a href="/salary-intelligence" class="agent-card">
+        <div class="agent-header">
+            <div class="agent-avatar" style="background: rgba(245, 158, 11, 0.15); color: var(--gold-light);">
+                <i data-lucide="dollar-sign"></i>
+            </div>
+            <div class="agent-info">
+                <div class="agent-name">Salary Intelligence</div>
+                <div class="agent-desc">Predictions &amp; negotiation</div>
+            </div>
+        </div>
+        <div class="agent-status"><span class="status-dot"></span> Ready</div>
+    </a>
+
+    <a href="/linkedin-optimizer" class="agent-card">
+        <div class="agent-header">
+            <div class="agent-avatar" style="background: rgba(6, 182, 212, 0.15); color: var(--cyan-light);">
+                <i data-lucide="linkedin"></i>
+            </div>
+            <div class="agent-info">
+                <div class="agent-name">LinkedIn Optimizer</div>
+                <div class="agent-desc">Profile &amp; outreach builder</div>
+            </div>
+        </div>
+        <div class="agent-status"><span class="status-dot"></span> Ready</div>
+    </a>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Readiness score
+    fetch('/api/readiness')
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('readinessScore').innerText = data.overall + '/100';
+            const lbl = document.getElementById('readinessLabel');
+            if(data.overall >= 70) {
+                lbl.className = 'stat-change up';
+                lbl.innerHTML = '<i data-lucide="trending-up" style="width: 14px;"></i> Job Ready';
+            } else {
+                lbl.className = 'stat-change text-gold';
+                lbl.innerHTML = '<i data-lucide="alert-circle" style="width: 14px;"></i> Needs Improvement';
+            }
+            lucide.createIcons();
+        });
+
+    // Profile completeness score from localStorage
+    const p = JSON.parse(localStorage.getItem('omnipath_profile') || '{}');
+    const fields = ['name','email','role','sector','skills','achievement','education','country','location','targetSalary','linkedin'];
+    const filled = fields.filter(f => p[f] && p[f].toString().trim() !== '').length;
+    const pct = Math.round((filled / fields.length) * 100);
+    document.getElementById('profileScore').innerText = pct + '%';
+    const pLbl = document.getElementById('profileLabel');
+    if(pct >= 80) {
+        pLbl.className = 'stat-change up';
+        pLbl.innerHTML = '<i data-lucide="check-circle" style="width:14px;"></i> Profile Complete';
+    } else if(pct >= 50) {
+        pLbl.className = 'stat-change text-gold';
+        pLbl.innerHTML = '<i data-lucide="alert-circle" style="width:14px;"></i> <a href="/onboarding" style="color:inherit;">Add more details</a>';
+    } else {
+        pLbl.className = 'stat-change text-muted';
+        pLbl.innerHTML = '<i data-lucide="plus-circle" style="width:14px;"></i> <a href="/onboarding" style="color:inherit;">Complete Setup</a>';
+    }
+    lucide.createIcons();
+</script>
+{% endblock %}

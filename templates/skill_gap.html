@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Skill Gap Analyzer{% endblock %}
+{% block page_title %}Skill Gap Agent{% endblock %}
+{% block page_breadcrumb %}Planning / Skill Gap{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Skill Gap Analyzer</h1>
+    <p>Compare your current skills against industry requirements to find out exactly what you need to learn.</p>
+</div>
+
+<div class="card mb-32" id="inputSection">
+    <div class="flex items-center gap-12 mb-24">
+        <div class="agent-avatar" style="background: rgba(16, 185, 129, 0.15); color: var(--green-light);">
+            <i data-lucide="bar-chart-2"></i>
+        </div>
+        <div>
+            <h3 class="card-title" style="margin: 0;">Skill Gap Agent</h3>
+            <div class="text-sm text-muted">Ready to analyze market data</div>
+        </div>
+    </div>
+
+    <form id="skillForm">
+        <div class="form-group">
+            <label class="form-label">Target Job Role</label>
+            <input type="text" class="form-control" id="targetRole" placeholder="e.g., Data Scientist">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Your Current Skills</label>
+            <div class="skill-chips" id="skillInputContainer" onclick="document.getElementById('skillInput').focus()">
+                <input type="text" class="chip-input" id="skillInput" placeholder="Type a skill and press Enter...">
+            </div>
+            <div class="text-xs text-muted mt-8">Press Enter after each skill to add it.</div>
+        </div>
+        <button type="button" class="btn btn-primary" onclick="analyzeSkills()">
+            <i data-lucide="scan"></i> Analyze Gap
+        </button>
+    </form>
+</div>
+
+<!-- Results Section -->
+<div id="resultsSection" class="result-section">
+    <div class="grid-2 mb-32">
+        <div class="card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 48px;">
+            <div class="gauge-container">
+                <div class="score-big text-gradient" id="matchScore" style="font-size: 72px;">--%</div>
+                <div class="score-label">Role Match Score</div>
+            </div>
+            <p class="text-muted mt-16 text-sm" id="gapSummary"></p>
+        </div>
+        
+        <div class="card">
+            <h3 class="card-title"><i data-lucide="alert-triangle" class="text-red-light"></i> Critical Skill Gaps</h3>
+            <div class="text-sm text-muted mb-16">You must learn these to be competitive for this role.</div>
+            <div class="flex flex-col gap-12" id="criticalGapsList"></div>
+            
+            <h3 class="card-title mt-24"><i data-lucide="plus-circle" class="text-gold-light"></i> Important to Have</h3>
+            <div class="flex" style="flex-wrap: wrap; gap: 8px; margin-top: 12px;" id="importantGapsList"></div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3 class="card-title mb-16">Learning Action Plan</h3>
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border); color: var(--text-secondary);">
+                    <th style="padding: 12px 0;">Skill to Learn</th>
+                    <th style="padding: 12px 0;">Priority</th>
+                    <th style="padding: 12px 0;">Est. Time</th>
+                    <th style="padding: 12px 0;">Recommendation</th>
+                </tr>
+            </thead>
+            <tbody id="gapDetailsTable">
+                <!-- Rendered via JS -->
+            </tbody>
+        </table>
+        
+        <div class="mt-24 text-right">
+            <a href="/learning-roadmap" class="btn btn-primary">Generate Full Roadmap <i data-lucide="arrow-right"></i></a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const skills = [];
+    const input = document.getElementById('skillInput');
+    const container = document.getElementById('skillInputContainer');
+
+    input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter') {
+            e.preventDefault();
+            const val = input.value.trim();
+            if(val && !skills.includes(val)) {
+                skills.push(val);
+                renderChips();
+            }
+            input.value = '';
+        }
+    });
+
+    function renderChips() {
+        const existing = container.querySelectorAll('.skill-chip');
+        existing.forEach(e => e.remove());
+        
+        skills.forEach((sk, idx) => {
+            const chip = document.createElement('div');
+            chip.className = 'skill-chip';
+            chip.innerHTML = `${sk} <button type="button" class="skill-chip-remove" onclick="removeSkill(${idx})"><i data-lucide="x"></i></button>`;
+            container.insertBefore(chip, input);
+        });
+        lucide.createIcons();
+    }
+
+    function removeSkill(idx) {
+        skills.splice(idx, 1);
+        renderChips();
+    }
+
+    function analyzeSkills() {
+        const pendingSkill = input.value.trim();
+        if(pendingSkill && !skills.includes(pendingSkill)) {
+            skills.push(pendingSkill);
+            input.value = '';
+            renderChips();
+        }
+
+        const targetRole = document.getElementById('targetRole').value;
+        if(!targetRole) return window.showToast('Please specify a target role', 'error');
+        if(skills.length === 0) return window.showToast('Please add at least one skill', 'error');
+
+        window.showLoader("Analyzing millions of job postings...");
+
+        fetch('/api/skill-gap', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({target_role: targetRole, current_skills: skills})
+        })
+        .then(res => res.json())
+        .then(data => {
+            window.hideLoader();
+            document.getElementById('inputSection').style.display = 'none';
+            document.getElementById('resultsSection').classList.add('visible');
+
+            document.getElementById('matchScore').innerText = data.match_score + '%';
+            document.getElementById('gapSummary').innerText = data.summary;
+
+            document.getElementById('criticalGapsList').innerHTML = data.critical_gaps.map(g => 
+                `<div style="padding: 10px 14px; background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--red); border-radius: 4px; font-weight: 500; font-size: 13px;">${g}</div>`
+            ).join('');
+            
+            if(data.critical_gaps.length === 0) {
+                document.getElementById('criticalGapsList').innerHTML = `<div class="text-green text-sm"><i data-lucide="check-circle"></i> No critical gaps found!</div>`;
+            }
+
+            document.getElementById('importantGapsList').innerHTML = data.important_gaps.map(g => 
+                `<span class="tag tag-violet">${g}</span>`
+            ).join('');
+
+            const tbody = document.getElementById('gapDetailsTable');
+            tbody.innerHTML = '';
+            data.gap_details.forEach(d => {
+                const priorityBadge = d.priority === 'Critical' ? '<span class="badge badge-red">Critical</span>' : '<span class="badge badge-gold">Important</span>';
+                tbody.innerHTML += `
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <td style="padding: 16px 0; font-weight: 600;">${d.name}</td>
+                        <td style="padding: 16px 0;">${priorityBadge}</td>
+                        <td style="padding: 16px 0; color: var(--text-secondary);"><i data-lucide="clock" style="width:14px; margin-bottom:-2px;"></i> ${d.time}</td>
+                        <td style="padding: 16px 0; color: var(--text-secondary);">${d.resources}</td>
+                    </tr>
+                `;
+            });
+            
+            lucide.createIcons();
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        prefillFromProfile({ role: 'targetRole', skills: 'skillInput' });
+    });
+</script>
+{% endblock %}

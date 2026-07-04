@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}Career Recovery Agent{% endblock %}
+{% block page_title %}Career Recovery Agent{% endblock %}
+{% block page_breadcrumb %}Career Recovery{% endblock %}
+
+{% block content %}
+<div class="page-header" style="text-align: center; margin-bottom: 40px;">
+    <h1 class="page-title text-gradient" style="font-size: 32px;">Career Recovery Agent</h1>
+    <p class="text-muted">Applied to 100 jobs but got 0 offers? Let's diagnose the root cause and build a recovery plan.</p>
+</div>
+
+<div class="grid-2">
+    <!-- Input Form -->
+    <div class="card">
+        <h2 style="font-size: 18px; margin-bottom: 20px; display:flex; align-items:center; gap:8px;">
+            <i data-lucide="activity" style="color:var(--red-light);"></i> Recovery Diagnostics
+        </h2>
+        
+        <form id="recoveryForm" onsubmit="event.preventDefault(); generateRecoveryPlan();">
+            <div class="mb-32">
+                <label class="stat-label" style="display:block; margin-bottom:8px;">Target Role</label>
+                <input type="text" class="form-control ob-input" id="recRole" placeholder="e.g. Data Scientist" required>
+            </div>
+
+            <div class="mb-32">
+                <label class="stat-label" style="display:block; margin-bottom:8px;">Core Skills</label>
+                <input type="text" class="form-control ob-input" id="recSkills" placeholder="e.g. Python, SQL, Machine Learning" required>
+            </div>
+
+            <div class="mb-32">
+                <label class="stat-label" style="display:block; margin-bottom:8px;">Estimated Resume ATS Score</label>
+                <select class="form-control ob-input" id="recAts">
+                    <option value="Low (< 60%)">Low (< 60%)</option>
+                    <option value="Medium (60-80%)" selected>Medium (60-80%)</option>
+                    <option value="High (> 80%)">High (> 80%)</option>
+                </select>
+            </div>
+
+            <div class="mb-32">
+                <label class="stat-label" style="display:block; margin-bottom:8px;">Portfolio / Proof of Work Status</label>
+                <select class="form-control ob-input" id="recPort">
+                    <option value="None / Weak">None / Weak</option>
+                    <option value="Outdated">Outdated</option>
+                    <option value="Strong / Up to date" selected>Strong / Up to date</option>
+                </select>
+            </div>
+
+            <div class="mb-32">
+                <label class="stat-label" style="display:block; margin-bottom:8px;">Typical Interview Feedback</label>
+                <select class="form-control ob-input" id="recIv">
+                    <option value="Ghosted / No Response">Ghosted / No Response</option>
+                    <option value="Rejected after Technical Round" selected>Rejected after Technical Round</option>
+                    <option value="Rejected after Behavioral Round">Rejected after Behavioral / Culture Round</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">
+                <i data-lucide="zap"></i> Generate Recovery Plan
+            </button>
+        </form>
+    </div>
+
+    <!-- Results Area -->
+    <div>
+        <div id="resultsSection" class="card hidden">
+            
+            <h2 style="font-size: 18px; margin-bottom: 20px; display:flex; align-items:center; gap:8px;">
+                <i data-lucide="clipboard-list" style="color:var(--cyan-light);"></i> Root Cause Diagnostics
+            </h2>
+            <div id="diagnosticsOut" style="margin-bottom:30px;">
+                <!-- Diagnostics injected here -->
+            </div>
+
+            <h2 style="font-size: 18px; margin-bottom: 20px; display:flex; align-items:center; gap:8px;">
+                <i data-lucide="map" style="color:var(--green-light);"></i> Action Plan
+            </h2>
+            <div id="actionPlanOut" style="margin-bottom:30px;">
+                <!-- Action Plan injected here -->
+            </div>
+
+            <h2 style="font-size: 18px; margin-bottom: 20px; display:flex; align-items:center; gap:8px;">
+                <i data-lucide="alert-triangle" style="color:var(--gold-light);"></i> Immediate Next Steps
+            </h2>
+            <ul id="immediateStepsOut" style="line-height:1.6; color:var(--text-secondary); margin-left: 20px;">
+                <!-- Steps injected here -->
+            </ul>
+        </div>
+        
+        <!-- Empty State -->
+        <div id="emptyState" class="card" style="text-align: center; padding: 60px 20px;">
+            <i data-lucide="shield-alert" style="width: 48px; height: 48px; color: var(--border-color); margin-bottom: 20px;"></i>
+            <h3 style="margin-bottom: 10px;">Awaiting Diagnostics</h3>
+            <p class="text-muted">Fill out the form to generate your custom recovery plan.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        prefillFromProfile({ role: 'recRole', skills: 'recSkills' });
+    });
+
+    function generateRecoveryPlan() {
+        window.showLoader("Analyzing career friction points...");
+        
+        const payload = {
+            role: document.getElementById('recRole').value,
+            skills: document.getElementById('recSkills').value,
+            ats_score: document.getElementById('recAts').value,
+            portfolio_status: document.getElementById('recPort').value,
+            interview_feedback: document.getElementById('recIv').value
+        };
+
+        fetch('/api/career-recovery', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            window.hideLoader();
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('resultsSection').classList.remove('hidden');
+
+            // Render Diagnostics
+            const diagHtml = data.diagnostics.map(d => `
+                <div style="background: rgba(239, 68, 68, 0.05); border-left: 3px solid var(--red-light); padding: 12px 16px; margin-bottom: 12px; border-radius: 0 8px 8px 0;">
+                    <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">${d.area}</div>
+                    <div style="color:var(--text-secondary); font-size:14px;">${d.issue}</div>
+                </div>
+            `).join('');
+            document.getElementById('diagnosticsOut').innerHTML = diagHtml;
+
+            // Render Action Plan
+            const actionHtml = data.action_plan.map(p => `
+                <div class="mb-32">
+                    <div style="font-weight:600; color:var(--cyan-light); margin-bottom:4px; font-size:16px;">${p.phase}</div>
+                    <div style="color:var(--text-secondary); font-size:14px; margin-bottom:12px;">${p.description}</div>
+                    <ul style="margin-left: 20px; font-size:14px; color:var(--text-primary);">
+                        ${p.tactics.map(t => `<li style="margin-bottom:6px;">${t}</li>`).join('')}
+                    </ul>
+                </div>
+            `).join('');
+            document.getElementById('actionPlanOut').innerHTML = actionHtml;
+
+            // Render Immediate Steps
+            const stepsHtml = data.immediate_steps.map(s => `<li>${s}</li>`).join('');
+            document.getElementById('immediateStepsOut').innerHTML = stepsHtml;
+
+            window.showToast("Recovery Plan Generated", "success");
+            lucide.createIcons();
+        });
+    }
+</script>
+{% endblock %}
