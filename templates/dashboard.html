@@ -5,7 +5,7 @@
 {% block page_breadcrumb %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="page-header" style="display:flex; justify-content:space-between; align-items:center;">
+<div class="page-header flex-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
     <div>
         <h1>Welcome back, <span class="text-gradient">{{ profile.name if profile.name else 'Future Professional' }}</span> 👋</h1>
         <p class="text-muted">Your AI Career Team is fully initialized. Click any agent below to begin instantly.</p>
@@ -17,7 +17,7 @@
 
 <!-- Profile Overview Card -->
 <div class="card mb-32" style="background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(6,182,212,0.05)); border: 1px solid rgba(124,58,237,0.3);">
-    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:24px;">
+    <div class="profile-overview-grid">
         <div>
             <div class="text-sm text-muted fw-600" style="text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Target Role</div>
             <div class="fw-700" style="font-size:16px; color:var(--violet-light);">{{ profile.role if profile.role else 'Not Set' }}</div>

@@ -26,6 +26,14 @@
 <!-- Toast -->
 <div id="toastContainer" class="toast-container"></div>
 
+<!-- Hamburger button (mobile only) -->
+<button class="hamburger-btn" id="hamburgerBtn" aria-label="Open navigation menu" aria-expanded="false">
+    <i data-lucide="menu" id="hamburgerIcon"></i>
+</button>
+
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <div class="layout-wrapper">
     <!-- Sidebar -->
     <div class="sidebar">
@@ -36,30 +44,30 @@
 
         <div class="nav-group">
             <div class="nav-label">Core</div>
-            <a href="/dashboard" class="nav-link"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
-            <a href="/onboarding" class="nav-link"><i data-lucide="user"></i><span>My Profile</span></a>
+            <a href="/dashboard" class="nav-link" data-label="Dashboard"><i data-lucide="layout-dashboard"></i><span>Dashboard</span></a>
+            <a href="/onboarding" class="nav-link" data-label="My Profile"><i data-lucide="user"></i><span>My Profile</span></a>
         </div>
 
         <div class="nav-group">
             <div class="nav-label">Career Agents</div>
-            <a href="/career-recovery" class="nav-link"><i data-lucide="activity"></i><span>Career Recovery</span></a>
-            <a href="/resume-studio" class="nav-link"><i data-lucide="file-text"></i><span>Resume Studio</span></a>
-            <a href="/skill-gap" class="nav-link"><i data-lucide="bar-chart-2"></i><span>Skill Gap Analyzer</span></a>
-            <a href="/learning-roadmap" class="nav-link"><i data-lucide="map"></i><span>Learning Roadmap</span></a>
-            <a href="/portfolio-builder" class="nav-link"><i data-lucide="briefcase"></i><span>Project & Portfolio Engine</span></a>
-            <a href="/interview-coach" class="nav-link"><i data-lucide="mic"></i><span>Interview Coach</span></a>
+            <a href="/career-recovery" class="nav-link" data-label="Career Recovery"><i data-lucide="activity"></i><span>Career Recovery</span></a>
+            <a href="/resume-studio" class="nav-link" data-label="Resume Studio"><i data-lucide="file-text"></i><span>Resume Studio</span></a>
+            <a href="/skill-gap" class="nav-link" data-label="Skill Gap Analyzer"><i data-lucide="bar-chart-2"></i><span>Skill Gap Analyzer</span></a>
+            <a href="/learning-roadmap" class="nav-link" data-label="Learning Roadmap"><i data-lucide="map"></i><span>Learning Roadmap</span></a>
+            <a href="/portfolio-builder" class="nav-link" data-label="Portfolio Engine"><i data-lucide="briefcase"></i><span>Project & Portfolio Engine</span></a>
+            <a href="/interview-coach" class="nav-link" data-label="Interview Coach"><i data-lucide="mic"></i><span>Interview Coach</span></a>
         </div>
 
         <div class="nav-group">
             <div class="nav-label">Job Search & Recovery</div>
-            <a href="/job-matcher" class="nav-link"><i data-lucide="search"></i><span>Job Matcher</span></a>
-            <a href="/salary-intelligence" class="nav-link"><i data-lucide="dollar-sign"></i><span>Salary Intel</span></a>
-            <a href="/linkedin-optimizer" class="nav-link"><i data-lucide="linkedin"></i><span>LinkedIn Optimizer</span></a>
+            <a href="/job-matcher" class="nav-link" data-label="Job Matcher"><i data-lucide="search"></i><span>Job Matcher</span></a>
+            <a href="/salary-intelligence" class="nav-link" data-label="Salary Intel"><i data-lucide="dollar-sign"></i><span>Salary Intel</span></a>
+            <a href="/linkedin-optimizer" class="nav-link" data-label="LinkedIn Optimizer"><i data-lucide="linkedin"></i><span>LinkedIn Optimizer</span></a>
         </div>
 
         <div class="nav-group">
             <div class="nav-label">System</div>
-            <a href="/mcp-hub" class="nav-link"><i data-lucide="server"></i><span>MCP Hub</span></a>
+            <a href="/mcp-hub" class="nav-link" data-label="MCP Hub"><i data-lucide="server"></i><span>MCP Hub</span></a>
         </div>
     </div>
 
@@ -126,6 +134,59 @@
     window.installPWA = function() {
         if(deferredPrompt) { deferredPrompt.prompt(); }
     };
+
+    // ── Mobile Sidebar Drawer ─────────────────────────────────
+    (function() {
+        const hamburger = document.getElementById('hamburgerBtn');
+        const sidebar   = document.querySelector('.sidebar');
+        const overlay   = document.getElementById('sidebarOverlay');
+        const icon      = document.getElementById('hamburgerIcon');
+
+        if (!hamburger || !sidebar || !overlay) return;
+
+        function openSidebar() {
+            sidebar.classList.add('sidebar-open');
+            overlay.classList.add('active');
+            hamburger.setAttribute('aria-expanded', 'true');
+            icon.setAttribute('data-lucide', 'x');
+            lucide.createIcons();
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('sidebar-open');
+            overlay.classList.remove('active');
+            hamburger.setAttribute('aria-expanded', 'false');
+            icon.setAttribute('data-lucide', 'menu');
+            lucide.createIcons();
+            document.body.style.overflow = '';
+        }
+
+        hamburger.addEventListener('click', function() {
+            if (sidebar.classList.contains('sidebar-open')) {
+                closeSidebar();
+            } else {
+                openSidebar();
+            }
+        });
+
+        // Close on overlay tap
+        overlay.addEventListener('click', closeSidebar);
+
+        // Auto-close after nav-link click (mobile)
+        document.querySelectorAll('.nav-link').forEach(function(link) {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    closeSidebar();
+                }
+            });
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeSidebar();
+        });
+    })();
 </script>
 
 {% block scripts %}{% endblock %}
