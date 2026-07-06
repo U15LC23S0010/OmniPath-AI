@@ -61,11 +61,12 @@
     text-align: center;
     width: 100%;
     transition: all 0.25s;
+    position: relative;
 }
-.orch-agent-box:hover {
-    border-color: var(--primary-light);
-    background: rgba(99, 102, 241, 0.15);
-    transform: translateY(-2px);
+.orch-agent-box.active {
+    border-color: var(--green-light);
+    background: rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
 }
 .orch-agent-icon {
     width: 32px; height: 32px;
@@ -85,12 +86,33 @@
     flex-direction: column;
     align-items: center;
     padding: 4px 0;
+    position: relative;
 }
 .orch-arrow-line {
     width: 2px;
     height: 20px;
     background: linear-gradient(to bottom, rgba(99,102,241,0.4), rgba(6,182,212,0.4));
+    overflow: hidden;
+    position: relative;
 }
+.flow-particle {
+    position: absolute;
+    width: 4px;
+    height: 8px;
+    background: var(--cyan-light);
+    top: -10px;
+    left: -1px;
+    border-radius: 2px;
+    opacity: 0;
+}
+.flow-particle.animate {
+    animation: flowDown 1s linear;
+}
+@keyframes flowDown {
+    0% { top: -10px; opacity: 1; }
+    100% { top: 20px; opacity: 0; }
+}
+
 .orch-arrow-head {
     width: 0; height: 0;
     border-left: 5px solid transparent;
@@ -116,17 +138,6 @@
 .orch-mcp-box.git      { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.35); color: var(--red-light);   }
 .orch-mcp-box.fs       { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.35);color: var(--gold-light);  }
 .orch-mcp-box.doc      { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.35);color: var(--primary-light);}
-
-.orch-call-badge {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 8px;
-    background: rgba(255,255,255,0.07);
-    opacity: 0;
-    transition: opacity 0.5s;
-}
-.orch-call-badge.show { opacity: 1; }
 
 /* Data rows */
 .mcp-bottom-grid {
@@ -194,8 +205,8 @@
 .status-pulse { width: 7px; height: 7px; background: var(--green-light); border-radius: 50%; box-shadow: 0 0 6px var(--green-light); animation: pulse 1.5s infinite; }
 @keyframes pulse { 0%{transform:scale(0.95);box-shadow:0 0 0 0 rgba(16,185,129,0.7)} 70%{transform:scale(1);box-shadow:0 0 0 5px rgba(16,185,129,0)} 100%{transform:scale(0.95);box-shadow:0 0 0 0 rgba(16,185,129,0)} }
 
-.mcp-console { background: #050510; border-radius: 7px; padding: 10px 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A78BFA; height: 80px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; gap: 3px; }
-.console-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; animation: fadeIn 0.3s forwards; }
+.mcp-console { background: #050510; border-radius: 7px; padding: 10px 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #A78BFA; height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+.console-line { opacity: 0; animation: fadeIn 0.3s forwards; word-break: break-all; }
 @keyframes fadeIn { to { opacity: 1; } }
 .console-line .ts { color: #4B5563; margin-right: 6px; }
 .console-line.action { color: #34D399; }
@@ -217,98 +228,73 @@
 <!-- ── Row 1: Live Metrics ─────────────────────────────────────── -->
 <div class="mcp-metric-grid">
     <div class="mcp-metric-card">
-        <div class="mcp-metric-label">MCP Calls Today</div>
+        <div class="mcp-metric-label">Execution Logs</div>
         <div class="mcp-metric-value" id="callsToday">0</div>
-        <div class="mcp-metric-sub"><i data-lucide="trending-up" style="width:12px;"></i> +12 last min</div>
+        <div class="mcp-metric-sub"><i data-lucide="activity" style="width:12px;"></i> Total records</div>
     </div>
     <div class="mcp-metric-card">
-        <div class="mcp-metric-label">Connected Servers</div>
-        <div class="mcp-metric-value" style="color:var(--green-light);">4 / 4</div>
-        <div class="mcp-metric-sub"><i data-lucide="check-circle" style="width:12px;"></i> All healthy</div>
+        <div class="mcp-metric-label">Active Agents</div>
+        <div class="mcp-metric-value" id="activeAgentsVal" style="color:var(--green-light);">0</div>
+        <div class="mcp-metric-sub"><i data-lucide="cpu" style="width:12px;"></i> Registered Agents</div>
     </div>
     <div class="mcp-metric-card">
-        <div class="mcp-metric-label">Success Rate</div>
-        <div class="mcp-metric-value" id="successRate">99.8%</div>
-        <div class="mcp-metric-sub"><i data-lucide="shield-check" style="width:12px;"></i> No errors today</div>
+        <div class="mcp-metric-label">Total Requests</div>
+        <div class="mcp-metric-value" id="totalRequests">0</div>
+        <div class="mcp-metric-sub"><i data-lucide="check-circle" style="width:12px;"></i> Since boot</div>
     </div>
     <div class="mcp-metric-card">
         <div class="mcp-metric-label">Avg Response</div>
-        <div class="mcp-metric-value" id="avgResponse">120ms</div>
-        <div class="mcp-metric-sub"><i data-lucide="zap" style="width:12px;"></i> Sub-150ms target</div>
+        <div class="mcp-metric-value" id="avgResponse">0ms</div>
+        <div class="mcp-metric-sub"><i data-lucide="zap" style="width:12px;"></i> Real-time metric</div>
     </div>
 </div>
 
 <!-- ── Row 2: Agent ↔ MCP Orchestration Map ────────────────────── -->
 <div class="orch-section card" style="margin-bottom:24px;">
     <div style="margin-bottom:18px;">
-        <div style="font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">AI Agent ↔ MCP Orchestration</div>
-        <div style="font-size:12px;color:var(--text-muted);">Each agent is statically bound to a dedicated MCP server. Calls flash in real time.</div>
+        <div style="font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:4px;">AI Agent ↔ MCP Orchestration Pipeline</div>
+        <div style="font-size:12px;color:var(--text-muted);">Agents highlight when they process tasks. All context flows through Shared Memory. Particles show live execution flow.</div>
     </div>
     <div class="orch-grid">
-        <!-- Resume Agent → Browser MCP -->
         <div class="orch-flow">
-            <div class="orch-agent-box">
+            <div class="orch-agent-box" id="agent-ResumeOptimizerAgent">
                 <div class="orch-agent-icon" style="background:rgba(245,158,11,0.12);color:var(--gold-light);"><i data-lucide="file-text" style="width:16px;"></i></div>
-                <div class="orch-agent-name">Resume Agent</div>
+                <div class="orch-agent-name">Resume Optimizer</div>
             </div>
-            <div class="orch-arrow"><div class="orch-arrow-line"></div><div class="orch-arrow-head"></div></div>
-            <div class="orch-mcp-box browser">
-                <i data-lucide="globe" style="width:18px;"></i>
-                Browser MCP
-                <span class="orch-call-badge" id="badge-resume">CALL</span>
-            </div>
+            <div class="orch-arrow"><div class="orch-arrow-line"><div class="flow-particle" id="p-resume"></div></div><div class="orch-arrow-head"></div></div>
+            <div class="orch-mcp-box browser">Browser MCP</div>
         </div>
-        <!-- Skill Gap → Doc MCP -->
         <div class="orch-flow">
-            <div class="orch-agent-box">
+            <div class="orch-agent-box" id="agent-SkillGapAgent">
                 <div class="orch-agent-icon" style="background:rgba(16,185,129,0.12);color:var(--green-light);"><i data-lucide="bar-chart-2" style="width:16px;"></i></div>
                 <div class="orch-agent-name">Skill Gap Agent</div>
             </div>
-            <div class="orch-arrow"><div class="orch-arrow-line"></div><div class="orch-arrow-head"></div></div>
-            <div class="orch-mcp-box doc">
-                <i data-lucide="book-open" style="width:18px;"></i>
-                Documentation MCP
-                <span class="orch-call-badge" id="badge-skill">CALL</span>
-            </div>
+            <div class="orch-arrow"><div class="orch-arrow-line"><div class="flow-particle" id="p-skill"></div></div><div class="orch-arrow-head"></div></div>
+            <div class="orch-mcp-box doc">Documentation MCP</div>
         </div>
-        <!-- Project Engine → Git MCP -->
         <div class="orch-flow">
-            <div class="orch-agent-box">
+            <div class="orch-agent-box" id="agent-PortfolioGeneratorAgent">
                 <div class="orch-agent-icon" style="background:rgba(99,102,241,0.12);color:var(--primary-light);"><i data-lucide="briefcase" style="width:16px;"></i></div>
-                <div class="orch-agent-name">Project & Portfolio Engine</div>
+                <div class="orch-agent-name">Portfolio Builder</div>
             </div>
-            <div class="orch-arrow"><div class="orch-arrow-line"></div><div class="orch-arrow-head"></div></div>
-            <div class="orch-mcp-box git">
-                <i data-lucide="git-branch" style="width:18px;"></i>
-                Git MCP
-                <span class="orch-call-badge" id="badge-port">CALL</span>
-            </div>
+            <div class="orch-arrow"><div class="orch-arrow-line"><div class="flow-particle" id="p-port"></div></div><div class="orch-arrow-head"></div></div>
+            <div class="orch-mcp-box git">Git MCP</div>
         </div>
-        <!-- Interview Agent → Browser MCP -->
         <div class="orch-flow">
-            <div class="orch-agent-box">
+            <div class="orch-agent-box" id="agent-InterviewCoachAgent">
                 <div class="orch-agent-icon" style="background:rgba(6,182,212,0.12);color:var(--cyan-light);"><i data-lucide="mic" style="width:16px;"></i></div>
                 <div class="orch-agent-name">Interview Coach</div>
             </div>
-            <div class="orch-arrow"><div class="orch-arrow-line"></div><div class="orch-arrow-head"></div></div>
-            <div class="orch-mcp-box browser">
-                <i data-lucide="globe" style="width:18px;"></i>
-                Browser MCP
-                <span class="orch-call-badge" id="badge-iv">CALL</span>
-            </div>
+            <div class="orch-arrow"><div class="orch-arrow-line"><div class="flow-particle" id="p-iv"></div></div><div class="orch-arrow-head"></div></div>
+            <div class="orch-mcp-box browser">Browser MCP</div>
         </div>
-        <!-- Career Recovery → Filesystem MCP -->
         <div class="orch-flow">
-            <div class="orch-agent-box">
+            <div class="orch-agent-box" id="agent-CareerRecoveryAgent">
                 <div class="orch-agent-icon" style="background:rgba(239,68,68,0.12);color:var(--red-light);"><i data-lucide="activity" style="width:16px;"></i></div>
-                <div class="orch-agent-name">Career Recovery Agent</div>
+                <div class="orch-agent-name">Career Recovery</div>
             </div>
-            <div class="orch-arrow"><div class="orch-arrow-line"></div><div class="orch-arrow-head"></div></div>
-            <div class="orch-mcp-box fs">
-                <i data-lucide="folder-sync" style="width:18px;"></i>
-                Filesystem MCP
-                <span class="orch-call-badge" id="badge-rec">CALL</span>
-            </div>
+            <div class="orch-arrow"><div class="orch-arrow-line"><div class="flow-particle" id="p-rec"></div></div><div class="orch-arrow-head"></div></div>
+            <div class="orch-mcp-box fs">Filesystem MCP</div>
         </div>
     </div>
 </div>
@@ -316,99 +302,51 @@
 <!-- ── Row 3: Charts + Console Streams ─────────────────────────── -->
 <div class="mcp-bottom-grid">
 
-    <!-- Charts Column -->
+    <!-- Left: Context Viewer and Stats -->
     <div class="mcp-charts-col">
-        <!-- Browser MCP Usage Chart -->
-        <div class="chart-card">
-            <div class="chart-card-header">
-                <div class="chart-card-title"><i data-lucide="globe" style="width:14px;color:var(--cyan-light);"></i> Browser MCP Usage</div>
-                <div class="chart-card-stat" id="browserStat">0 req/s</div>
+        <div class="mcp-card">
+            <div class="mcp-header">
+                <div class="mcp-title-wrap">
+                    <div class="mcp-icon" style="color:var(--cyan-light);"><i data-lucide="database" style="width:16px;"></i></div>
+                    <div class="mcp-title">Shared Memory Context</div>
+                </div>
+                <div class="status-badge"><div class="status-pulse"></div> Synced</div>
             </div>
-            <canvas id="chartBrowser" height="80"></canvas>
+            <div class="mcp-console" id="console-context" style="white-space: pre-wrap; font-size: 10px; color: #60A5FA; height: 120px;">
+                Waiting for context data...
+            </div>
         </div>
-        <!-- Git MCP Usage Chart -->
+
         <div class="chart-card">
             <div class="chart-card-header">
-                <div class="chart-card-title"><i data-lucide="git-branch" style="width:14px;color:var(--red-light);"></i> Git MCP Usage</div>
-                <div class="chart-card-stat" id="gitStat">0 req/s</div>
+                <div class="chart-card-title"><i data-lucide="pie-chart" style="width:14px;color:var(--gold-light);"></i> Task Distribution</div>
+                <div class="chart-card-stat" id="memStat">0 Bytes</div>
             </div>
-            <canvas id="chartGit" height="80"></canvas>
-        </div>
-        <!-- Filesystem Ops -->
-        <div class="chart-card">
-            <div class="chart-card-header">
-                <div class="chart-card-title"><i data-lucide="folder-sync" style="width:14px;color:var(--gold-light);"></i> Filesystem Operations</div>
-                <div class="chart-card-stat" id="fsStat">0 ops/s</div>
-            </div>
-            <canvas id="chartFs" height="80"></canvas>
-        </div>
-        <!-- Documentation Lookups -->
-        <div class="chart-card">
-            <div class="chart-card-header">
-                <div class="chart-card-title"><i data-lucide="book-open" style="width:14px;color:var(--primary-light);"></i> Documentation Lookups</div>
-                <div class="chart-card-stat" id="docStat">0 req/s</div>
-            </div>
-            <canvas id="chartDoc" height="80"></canvas>
+            <canvas id="chartDistribution" height="60"></canvas>
         </div>
     </div>
 
-    <!-- Console Streams Column -->
+    <!-- Right: Central Execution Log -->
     <div class="mcp-consoles-col">
-        <!-- Browser MCP -->
         <div class="mcp-card">
             <div class="mcp-header">
                 <div class="mcp-title-wrap">
-                    <div class="mcp-icon" style="color:var(--cyan-light);"><i data-lucide="globe" style="width:16px;"></i></div>
-                    <div class="mcp-title">Browser MCP</div>
+                    <div class="mcp-icon" style="color:var(--gold-light);"><i data-lucide="terminal" style="width:16px;"></i></div>
+                    <div class="mcp-title">Central Execution Log</div>
                 </div>
-                <div class="status-badge"><div class="status-pulse"></div> Active</div>
+                <div class="status-badge"><div class="status-pulse"></div> Live</div>
             </div>
-            <div class="mcp-console" id="console-browser">
-                <div class="console-line info"><span class="ts">[SYS]</span> Connected to Chromium headless...</div>
-                <div class="console-line action"><span class="ts" id="ts-1"></span> Researching jobs...</div>
+            <div class="mcp-console" id="console-execution">
+                <div class="console-line info"><span class="ts">[SYS]</span> Career Orchestrator Initialized...</div>
             </div>
         </div>
-        <!-- Filesystem MCP -->
-        <div class="mcp-card">
-            <div class="mcp-header">
-                <div class="mcp-title-wrap">
-                    <div class="mcp-icon" style="color:var(--gold-light);"><i data-lucide="folder-sync" style="width:16px;"></i></div>
-                    <div class="mcp-title">Filesystem MCP</div>
-                </div>
-                <div class="status-badge"><div class="status-pulse"></div> Active</div>
+        
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <div class="chart-card-title"><i data-lucide="activity" style="width:14px;color:var(--primary-light);"></i> Requests Per Minute</div>
+                <div class="chart-card-stat" id="taskStat">0 RPM</div>
             </div>
-            <div class="mcp-console" id="console-fs">
-                <div class="console-line info"><span class="ts">[SYS]</span> Watcher attached to /reports...</div>
-                <div class="console-line action"><span class="ts" id="ts-2"></span> Saving reports...</div>
-            </div>
-        </div>
-        <!-- Git MCP -->
-        <div class="mcp-card">
-            <div class="mcp-header">
-                <div class="mcp-title-wrap">
-                    <div class="mcp-icon" style="color:var(--red-light);"><i data-lucide="git-branch" style="width:16px;"></i></div>
-                    <div class="mcp-title">Git MCP</div>
-                </div>
-                <div class="status-badge"><div class="status-pulse"></div> Active</div>
-            </div>
-            <div class="mcp-console" id="console-git">
-                <div class="console-line info"><span class="ts">[SYS]</span> Authenticated via GitHub API...</div>
-                <div class="console-line action"><span class="ts" id="ts-3"></span> Reviewing repositories...</div>
-            </div>
-        </div>
-        <!-- Documentation MCP -->
-        <div class="mcp-card">
-            <div class="mcp-header">
-                <div class="mcp-title-wrap">
-                    <div class="mcp-icon" style="color:var(--primary-light);"><i data-lucide="book-open" style="width:16px;"></i></div>
-                    <div class="mcp-title">Documentation MCP</div>
-                </div>
-                <div class="status-badge"><div class="status-pulse"></div> Active</div>
-            </div>
-            <div class="mcp-console" id="console-doc">
-                <div class="console-line info"><span class="ts">[SYS]</span> Knowledge base indices loaded...</div>
-                <div class="console-line action"><span class="ts" id="ts-4"></span> Fetching learning resources...</div>
-            </div>
+            <canvas id="chartTasks" height="60"></canvas>
         </div>
     </div>
 </div>
@@ -417,134 +355,157 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script>
-// ── Helpers ──────────────────────────────────────────────────────
-function getTS() {
-    const n = new Date();
-    return `[${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}]`;
+// ── Live MCP Data Fetching ─────────────────────────────────────────
+
+let knownLogCount = 0;
+let distData = [10, 10, 10, 10, 10]; // mock distribution for pie chart
+
+async function fetchMCPData() {
+    try {
+        const [statusRes, tasksRes, contextRes, agentsRes] = await Promise.all([
+            fetch('/mcp/status'),
+            fetch('/mcp/tasks'),
+            fetch('/mcp/context'),
+            fetch('/mcp/agents')
+        ]);
+        
+        const statusData = await statusRes.json();
+        const tasksData = await tasksRes.json();
+        const contextData = await contextRes.json();
+        const agentsData = await agentsRes.json();
+        
+        // Update Metrics
+        document.getElementById('callsToday').innerText = tasksData.history.length;
+        
+        const activeCount = agentsData.filter(a => a.status === 'running').length;
+        document.getElementById('activeAgentsVal').innerText = activeCount + ' / ' + agentsData.length;
+        
+        document.getElementById('totalRequests').innerText = statusData.total_requests;
+        document.getElementById('avgResponse').innerText = statusData.avg_execution_time_ms + 'ms';
+        document.getElementById('memStat').innerText = statusData.memory_size_bytes + ' Bytes';
+        
+        // Update Context Viewer
+        document.getElementById('console-context').innerText = JSON.stringify(contextData, null, 2);
+        
+        // Update Execution Log
+        const execConsole = document.getElementById('console-execution');
+        if (tasksData.history.length > knownLogCount) {
+            for (let i = knownLogCount; i < tasksData.history.length; i++) {
+                const line = document.createElement('div');
+                line.className = 'console-line action';
+                line.innerHTML = tasksData.history[i];
+                execConsole.appendChild(line);
+                
+                // Trigger flow animation based on log content
+                if (tasksData.history[i].includes('Resume Optimizer')) triggerParticle('p-resume');
+                else if (tasksData.history[i].includes('Skill Gap')) triggerParticle('p-skill');
+                else if (tasksData.history[i].includes('Portfolio')) triggerParticle('p-port');
+                else if (tasksData.history[i].includes('Interview')) triggerParticle('p-iv');
+                else if (tasksData.history[i].includes('Recovery')) triggerParticle('p-rec');
+            }
+            knownLogCount = tasksData.history.length;
+            execConsole.scrollTop = execConsole.scrollHeight;
+        }
+        
+        // Highlight Active Agents
+        document.querySelectorAll('.orch-agent-box').forEach(el => el.classList.remove('active'));
+        if (statusData.current_agent) {
+            const safeName = statusData.current_agent.replace(/\s+/g, '');
+            const box = document.getElementById('agent-' + safeName);
+            if (box) box.classList.add('active');
+        }
+        
+        // Update distribution if real data exists
+        if (tasksData.completed.length > 0) {
+            distData = [
+                tasksData.completed.filter(t => t.includes('resume')).length,
+                tasksData.completed.filter(t => t.includes('skill')).length,
+                tasksData.completed.filter(t => t.includes('portfolio')).length,
+                tasksData.completed.filter(t => t.includes('interview')).length,
+                tasksData.completed.filter(t => t.includes('recovery')).length
+            ];
+            chartDistribution.data.datasets[0].data = distData;
+            chartDistribution.update();
+        }
+        
+    } catch(e) {
+        console.error("MCP Fetch Error:", e);
+    }
 }
+
+setInterval(fetchMCPData, 1500);
+fetchMCPData();
+
+function triggerParticle(id) {
+    const el = document.getElementById(id);
+    if(el) {
+        el.classList.remove('animate');
+        void el.offsetWidth; // trigger reflow
+        el.classList.add('animate');
+    }
+}
+
+// ── Background Chart Animations ────────────────────────────────────
 function rnd(min,max){ return +(Math.random()*(max-min)+min).toFixed(1); }
-
-// Set initial timestamps
-['ts-1','ts-2','ts-3','ts-4'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = getTS(); });
-
-// ── Live Metrics ─────────────────────────────────────────────────
-let totalCalls = 247;
-const callsEl      = document.getElementById('callsToday');
-const respEl       = document.getElementById('avgResponse');
-const successEl    = document.getElementById('successRate');
-
-function updateMetrics() {
-    totalCalls += Math.floor(Math.random()*3);
-    callsEl.innerText = totalCalls.toLocaleString();
-    const resp = Math.floor(rnd(108, 138));
-    respEl.innerText = resp + 'ms';
-    const sr = (99.5 + Math.random()*0.5).toFixed(1);
-    successEl.innerText = sr + '%';
-}
-setInterval(updateMetrics, 2000);
-updateMetrics();
-
-// ── Chart.js Setup ────────────────────────────────────────────────
 const MAX_POINTS = 20;
 const labelBase = Array.from({length:MAX_POINTS}, (_,i) => '');
 
-function makeDataset(color) {
-    return {
-        data: Array.from({length:MAX_POINTS}, () => rnd(1,10)),
-        borderColor: color,
-        backgroundColor: color.replace('1)', '0.08)'),
-        borderWidth: 2,
-        pointRadius: 0,
-        tension: 0.4,
-        fill: true
-    };
-}
-
-function createChart(canvasId, color) {
-    const ctx = document.getElementById(canvasId).getContext('2d');
-    return new Chart(ctx, {
-        type: 'line',
-        data: { labels: [...labelBase], datasets: [makeDataset(color)] },
-        options: {
-            animation: { duration: 400 },
-            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-            scales: {
-                x: { display: false },
-                y: {
-                    display: true,
-                    min: 0, max: 20,
-                    grid: { color: 'rgba(255,255,255,0.04)' },
-                    ticks: { color: '#6B7280', font: { size: 10 }, maxTicksLimit: 4 }
-                }
-            },
-            responsive: true,
-            maintainAspectRatio: true
-        }
-    });
-}
-
-const chartBrowser = createChart('chartBrowser', 'rgba(6,182,212,1)');
-const chartGit     = createChart('chartGit',     'rgba(239,68,68,1)');
-const chartFs      = createChart('chartFs',      'rgba(245,158,11,1)');
-const chartDoc     = createChart('chartDoc',     'rgba(99,102,241,1)');
-
-function pushData(chart, statElId, unit) {
-    const val = rnd(1, 18);
-    chart.data.labels.shift(); chart.data.labels.push('');
-    chart.data.datasets[0].data.shift(); chart.data.datasets[0].data.push(val);
-    chart.update();
-    document.getElementById(statElId).innerText = val + ' ' + unit;
-}
-
-setInterval(() => pushData(chartBrowser, 'browserStat', 'req/s'),  1200);
-setInterval(() => pushData(chartGit,     'gitStat',     'req/s'),  1800);
-setInterval(() => pushData(chartFs,      'fsStat',      'ops/s'),  2200);
-setInterval(() => pushData(chartDoc,     'docStat',     'req/s'),  1500);
-
-// ── Console Streams ───────────────────────────────────────────────
-const streams = {
-    browser: ["Parsing job description DOM...","Extracting salary range...","Navigating to next page...","Bypassing rate limit...","Researching jobs...","Scrolling listings...","Analyzing requirements..."],
-    fs:      ["Writing PDF buffer to disk...","Saving reports...","Syncing /reports directory...","Generating export artifact...","Compressing payload...","Updating index.json..."],
-    git:     ["Fetching origin/main...","Reviewing GitHub repositories...","Diffing commit history...","Checking PR for vulnerabilities...","Cloning target repository...","Analyzing code complexity..."],
-    doc:     ["Querying vector DB...","Fetching learning resources...","Parsing markdown structure...","Cross-referencing skill gaps...","Extracting code examples...","Ranking by relevance score..."]
-};
-
-function addLog(consoleid, type) {
-    const el = document.getElementById('console-' + consoleid);
-    if (!el) return;
-    const list = streams[consoleid];
-    const msg  = list[Math.floor(Math.random()*list.length)];
-    const line = document.createElement('div');
-    line.className = 'console-line ' + type;
-    line.innerHTML = `<span class="ts">${getTS()}</span> ${msg}`;
-    el.appendChild(line);
-    // Keep only last 4 lines + sys line
-    while (el.children.length > 4) el.removeChild(el.children[0]);
-}
-
-setInterval(() => addLog('browser', 'action'), 1900);
-setInterval(() => addLog('fs',      'info'),   2800);
-setInterval(() => addLog('git',     'action'), 2400);
-setInterval(() => addLog('doc',     'info'),   1700);
-
-// ── Orchestration Call Badges (flash animations) ──────────────────
-const orchBadges = [
-    { id: 'badge-resume', interval: 3200 },
-    { id: 'badge-skill',  interval: 4100 },
-    { id: 'badge-port',   interval: 3800 },
-    { id: 'badge-iv',     interval: 2700 },
-    { id: 'badge-rec',    interval: 3500 }
-];
-
-function flashBadge(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 800);
-}
-
-orchBadges.forEach(({ id, interval }) => {
-    setInterval(() => flashBadge(id), interval);
+// Requests Per Minute Chart (Line)
+const ctx = document.getElementById('chartTasks').getContext('2d');
+const chartTasks = new Chart(ctx, {
+    type: 'line',
+    data: { 
+        labels: [...labelBase], 
+        datasets: [{
+            data: Array.from({length:MAX_POINTS}, () => rnd(1,5)),
+            borderColor: 'rgba(99,102,241,1)',
+            backgroundColor: 'rgba(99,102,241,0.08)',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.4,
+            fill: true
+        }] 
+    },
+    options: {
+        animation: { duration: 400 },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: { display: true, min: 0, max: 20, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#6B7280', font: { size: 10 }, maxTicksLimit: 3 } } },
+        responsive: true, maintainAspectRatio: true
+    }
 });
+
+// Task Distribution Chart (Doughnut)
+const ctxDist = document.getElementById('chartDistribution').getContext('2d');
+const chartDistribution = new Chart(ctxDist, {
+    type: 'doughnut',
+    data: { 
+        labels: ['Resume', 'Skills', 'Portfolio', 'Interview', 'Recovery'],
+        datasets: [{
+            data: distData,
+            backgroundColor: [
+                'rgba(245,158,11,0.8)',
+                'rgba(16,185,129,0.8)',
+                'rgba(99,102,241,0.8)',
+                'rgba(6,182,212,0.8)',
+                'rgba(239,68,68,0.8)'
+            ],
+            borderWidth: 0
+        }] 
+    },
+    options: {
+        plugins: { legend: { display: false } },
+        cutout: '70%',
+        responsive: true, maintainAspectRatio: true
+    }
+});
+
+setInterval(() => {
+    // rpm calculation mock for visual
+    const val = rnd(1, 15);
+    chartTasks.data.labels.shift(); chartTasks.data.labels.push('');
+    chartTasks.data.datasets[0].data.shift(); chartTasks.data.datasets[0].data.push(val);
+    chartTasks.update();
+    document.getElementById('taskStat').innerText = val + ' RPM';
+}, 2000);
 </script>
 {% endblock %}
