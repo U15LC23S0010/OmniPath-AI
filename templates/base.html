@@ -70,6 +70,7 @@
         <div class="nav-group">
             <div class="nav-label">System</div>
             <a href="/mcp-hub" class="nav-link" data-label="MCP Hub"><i data-lucide="server"></i><span>MCP Hub</span></a>
+            <a href="/privacy" class="nav-link" data-label="Privacy Policy"><i data-lucide="shield-check"></i><span>Privacy</span></a>
         </div>
     </div>
 
@@ -217,6 +218,682 @@
             }
         });
     };
+</script>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     OMNIPATH AI INTERACTIVE TUTORIAL
+     • Spotlight + tooltip step-by-step walkthrough
+     • localStorage flag → auto-shows for first-time visitors
+     • Glitch-free: single currentStep integer drives all rendering
+     • Persistent ❓ button lets users replay at any time
+════════════════════════════════════════════════════════════════ -->
+
+<!-- Floating Help Button -->
+<button id="tutorialHelpBtn" aria-label="Open tutorial" title="Take the Tutorial">
+    <i data-lucide="help-circle"></i>
+</button>
+
+<!-- Tutorial Overlay -->
+<div id="tutorialOverlay" role="dialog" aria-modal="true" aria-label="OmniPath AI Tutorial" style="display:none;">
+
+    <!-- Dark backdrop with spotlight hole -->
+    <div id="tutorialBackdrop"></div>
+    <div id="tutorialSpotlight"></div>
+
+    <!-- Welcome Card (step 0 only) -->
+    <div id="tutorialWelcomeCard">
+        <div class="tut-welcome-icon">🚀</div>
+        <h2 class="tut-welcome-title">Welcome to <span class="text-gradient">OmniPath AI</span></h2>
+        <p class="tut-welcome-sub">Your personal AI-powered career team. Let us walk you through every tool in under 2 minutes so you can hit the ground running.</p>
+        <div class="tut-welcome-features">
+            <div class="tut-feat"><span>🎯</span> 9 Specialized AI Agents</div>
+            <div class="tut-feat"><span>🧠</span> Shared Context Memory</div>
+            <div class="tut-feat"><span>⚡</span> Resume → Job Offer Pipeline</div>
+        </div>
+        <div class="tut-welcome-actions">
+            <button class="tut-btn-primary" id="tutStartBtn">Start Tour &nbsp;→</button>
+            <button class="tut-btn-ghost" id="tutSkipWelcomeBtn">Skip</button>
+        </div>
+    </div>
+
+    <!-- Step Tooltip Card -->
+    <div id="tutorialCard">
+        <!-- Progress bar -->
+        <div class="tut-progress-track"><div class="tut-progress-fill" id="tutProgressFill"></div></div>
+
+        <!-- Step counter + icon -->
+        <div class="tut-card-header">
+            <div class="tut-step-icon" id="tutStepIcon"></div>
+            <span class="tut-step-counter" id="tutStepCounter"></span>
+        </div>
+
+        <!-- Content -->
+        <div class="tut-card-title" id="tutStepTitle"></div>
+        <div class="tut-card-body" id="tutStepBody"></div>
+
+        <!-- How-it-works pill -->
+        <div class="tut-how-box" id="tutHowBox"></div>
+
+        <!-- Navigation -->
+        <div class="tut-nav">
+            <button class="tut-btn-ghost tut-btn-sm" id="tutPrevBtn">← Back</button>
+            <div class="tut-dots" id="tutDots"></div>
+            <button class="tut-btn-primary tut-btn-sm" id="tutNextBtn">Next →</button>
+        </div>
+
+        <!-- Skip link -->
+        <button class="tut-skip-link" id="tutSkipBtn">Skip tutorial</button>
+    </div>
+
+</div>
+
+<style>
+/* ══════════════════════════════════════════
+   TUTORIAL STYLES
+══════════════════════════════════════════ */
+#tutorialHelpBtn {
+    position: fixed;
+    bottom: 28px; right: 28px;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 24px rgba(99,102,241,0.55);
+    z-index: 9000;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+#tutorialHelpBtn:hover { transform: scale(1.12); box-shadow: 0 6px 32px rgba(99,102,241,0.7); }
+#tutorialHelpBtn svg { width: 22px; height: 22px; }
+
+/* Overlay */
+#tutorialOverlay {
+    position: fixed; inset: 0;
+    z-index: 10000;
+    pointer-events: none;
+}
+#tutorialOverlay.active { pointer-events: auto; }
+
+/* Backdrop */
+#tutorialBackdrop {
+    position: fixed; inset: 0;
+    background: rgba(4, 4, 20, 0.82);
+    transition: opacity 0.35s;
+}
+
+/* Spotlight ring */
+#tutorialSpotlight {
+    position: fixed;
+    border-radius: 14px;
+    box-shadow: 0 0 0 9999px rgba(4, 4, 20, 0.82);
+    transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
+    pointer-events: none;
+    border: 2px solid rgba(99,102,241,0.7);
+    z-index: 10001;
+}
+
+/* Welcome card */
+#tutorialWelcomeCard {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(560px, 92vw);
+    background: linear-gradient(160deg, #13132b 0%, #0d0d1f 100%);
+    border: 1px solid rgba(99,102,241,0.35);
+    border-radius: 20px;
+    padding: 40px 36px;
+    text-align: center;
+    z-index: 10003;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+    animation: tutFadeIn 0.35s ease;
+}
+@keyframes tutFadeIn {
+    from { opacity:0; transform: translate(-50%,-46%); }
+    to   { opacity:1; transform: translate(-50%,-50%); }
+}
+.tut-welcome-icon { font-size: 48px; margin-bottom: 16px; }
+.tut-welcome-title { font-size: 26px; font-weight: 800; color: #fff; margin-bottom: 10px; line-height:1.2; }
+.tut-welcome-sub { font-size: 14px; color: #9CA3AF; line-height: 1.7; margin-bottom: 24px; }
+.tut-welcome-features {
+    display: flex; gap: 12px; justify-content: center;
+    flex-wrap: wrap; margin-bottom: 28px;
+}
+.tut-feat {
+    background: rgba(99,102,241,0.1);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 8px; padding: 8px 14px;
+    font-size: 13px; font-weight: 600; color: #C4B5FD;
+    display: flex; align-items: center; gap: 6px;
+}
+.tut-welcome-actions { display: flex; gap: 12px; justify-content: center; align-items: center; }
+
+/* Step card */
+#tutorialCard {
+    position: fixed;
+    width: min(340px, 88vw);
+    background: #13132b;
+    border: 1px solid rgba(99,102,241,0.35);
+    border-radius: 16px;
+    padding: 22px 22px 16px;
+    z-index: 10003;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.04);
+    transition: top 0.4s cubic-bezier(0.4,0,0.2,1),
+                left 0.4s cubic-bezier(0.4,0,0.2,1),
+                right 0.4s cubic-bezier(0.4,0,0.2,1),
+                bottom 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.tut-progress-track {
+    height: 3px; background: rgba(255,255,255,0.08);
+    border-radius: 2px; margin-bottom: 16px; overflow: hidden;
+}
+.tut-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+}
+.tut-card-header {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 10px;
+}
+.tut-step-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    background: rgba(99,102,241,0.12);
+}
+.tut-step-counter {
+    font-size: 11px; font-weight: 700; color: #6B7280;
+    text-transform: uppercase; letter-spacing: 1px;
+}
+.tut-card-title {
+    font-size: 16px; font-weight: 700; color: #fff;
+    margin-bottom: 8px; line-height: 1.3;
+}
+.tut-card-body {
+    font-size: 13px; color: #9CA3AF; line-height: 1.65;
+    margin-bottom: 12px;
+}
+.tut-how-box {
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px; color: #A78BFA; line-height: 1.6;
+    margin-bottom: 16px;
+    display: none;
+}
+.tut-how-box.show { display: block; }
+.tut-nav {
+    display: flex; align-items: center;
+    justify-content: space-between; gap: 8px;
+}
+.tut-dots { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; flex: 1; }
+.tut-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    transition: background 0.2s, transform 0.2s;
+    cursor: pointer;
+}
+.tut-dot.active { background: #6366f1; transform: scale(1.4); }
+.tut-skip-link {
+    display: block; width: 100%; text-align: center;
+    background: none; border: none; color: #4B5563;
+    font-size: 11px; cursor: pointer; margin-top: 12px;
+    padding: 4px; transition: color 0.2s;
+}
+.tut-skip-link:hover { color: #9CA3AF; }
+
+/* Shared button styles */
+.tut-btn-primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff; border: none; border-radius: 8px;
+    padding: 10px 20px; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: opacity 0.2s, transform 0.15s;
+    white-space: nowrap;
+}
+.tut-btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+.tut-btn-primary:active { transform: translateY(0); opacity: 1; }
+.tut-btn-ghost {
+    background: rgba(255,255,255,0.06);
+    color: #9CA3AF; border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px; padding: 10px 18px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+.tut-btn-ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.tut-btn-sm { padding: 7px 14px; font-size: 12px; }
+.tut-btn-primary:disabled, .tut-btn-ghost:disabled {
+    opacity: 0.35; cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Highlighted element ring */
+.tut-highlighted {
+    position: relative;
+    z-index: 10002 !important;
+    border-radius: 10px;
+}
+</style>
+
+<script>
+(function () {
+    'use strict';
+
+    /* ─── STEP DEFINITIONS ───────────────────────────────────────────────
+       Each step: { icon, title, body, how, selector, position }
+       selector  → CSS selector of element to spotlight (null = centre screen)
+       position  → 'right' | 'left' | 'bottom' | 'top' | 'center'
+    ─────────────────────────────────────────────────────────────────── */
+    const STEPS = [
+        {
+            icon: '🏠',
+            title: 'Your Career Command Centre',
+            body: 'The <strong>Dashboard</strong> is your starting point. It shows your profile status, career readiness score, and quick-access cards to every AI agent.',
+            how: '💡 Visit the Dashboard after any session to see a summary of all your agent outputs in one place.',
+            selector: 'a[href="/dashboard"]',
+            position: 'right'
+        },
+        {
+            icon: '👤',
+            title: 'Step 1 — Set Up Your Profile',
+            body: 'Before using any agent, fill in <strong>My Profile</strong>. Enter your name, target role, skills, experience level, and location. Every agent reads this automatically — you never re-type it.',
+            how: '💡 Profile data is prefilled into every form so the AI always knows your context. Set it once, use it everywhere.',
+            selector: 'a[href="/onboarding"]',
+            position: 'right'
+        },
+        {
+            icon: '📄',
+            title: 'Resume Studio — Know Your ATS Score',
+            body: 'Upload your resume PDF and select your target role. The <strong>ATS Analyzer Agent</strong> scans for missing keywords, scores your resume out of 100, and the <strong>Resume Optimizer</strong> rewrites weak bullet points.',
+            how: '💡 How it works: Your PDF is parsed in-memory → text is scored against role-specific keyword lists → improvement suggestions are generated. Your file is never stored.',
+            selector: 'a[href="/resume-studio"]',
+            position: 'right'
+        },
+        {
+            icon: '📊',
+            title: 'Skill Gap Analyzer — Find What\'s Missing',
+            body: 'Enter your current skills and target role. The <strong>Skill Gap Agent</strong> compares your profile to market expectations and returns a ranked list of skills to learn, in priority order.',
+            how: '💡 How it works: Agent maps your skills against a role-specific taxonomy → ranks gaps by market demand → suggests what to learn first.',
+            selector: 'a[href="/skill-gap"]',
+            position: 'right'
+        },
+        {
+            icon: '🗺️',
+            title: 'Learning Roadmap — Your Study Plan',
+            body: 'Set your target role and timeline (e.g. 3 months). The <strong>Roadmap Agent</strong> generates a week-by-week learning plan with certifications, projects, and resources mapped out until offer day.',
+            how: '💡 How it works: Roadmap is built from your skill gaps + timeline → phases are ordered from foundational to advanced → certifications are matched to your role.',
+            selector: 'a[href="/learning-roadmap"]',
+            position: 'right'
+        },
+        {
+            icon: '💼',
+            title: 'Portfolio Engine — Build Real Projects',
+            body: 'The <strong>Portfolio Agent</strong> recommends industry-grade projects for your role — not toy apps. It generates a full GitHub README with tech stack, architecture, and instructions for each.',
+            how: '💡 How it works: Projects are matched to your role\'s hiring criteria → difficulty adapts to your experience level → README template is auto-generated.',
+            selector: 'a[href="/portfolio-builder"]',
+            position: 'right'
+        },
+        {
+            icon: '🎤',
+            title: 'Interview Coach — Practice & Get Scored',
+            body: 'Select a role, experience level, and question type (Behavioural or Technical). The <strong>Interview Coach</strong> asks questions, you type your answer, and it scores you on clarity, structure, and depth.',
+            how: '💡 How it works: Questions are drawn from a role-specific bank → your answer is evaluated on STAR framework criteria → improvement hints are contextual.',
+            selector: 'a[href="/interview-coach"]',
+            position: 'right'
+        },
+        {
+            icon: '🔍',
+            title: 'Job Matcher — Personalised Job List',
+            body: 'Enter your role, salary range, and remote preference. The <strong>Job Matching Agent</strong> returns a curated list of matching positions ranked by relevance to your profile.',
+            how: '💡 How it works: Your background is cross-referenced with job types → work mode and salary filters are applied → best-fit roles are ranked by match score.',
+            selector: 'a[href="/job-matcher"]',
+            position: 'right'
+        },
+        {
+            icon: '💰',
+            title: 'Salary Intelligence — Know Your Worth',
+            body: 'Enter your role, location, and years of experience. The <strong>Salary Intelligence Agent</strong> tells you the market range, your target number, and how to negotiate it.',
+            how: '💡 How it works: Salary data is modelled by role + seniority + country/state → negotiation advice is contextual to your level → ranges include equity & benefits context.',
+            selector: 'a[href="/salary-intelligence"]',
+            position: 'right'
+        },
+        {
+            icon: '🔗',
+            title: 'LinkedIn Optimizer — Stand Out to Recruiters',
+            body: 'Enter your role, key achievement, and current skills. The <strong>LinkedIn Agent</strong> generates an optimised headline, professional summary, and a recruiter outreach message — with a headline score.',
+            how: '💡 How it works: Headline is crafted using high-impression LinkedIn patterns → summary includes quantified achievements → connection message is personalised.',
+            selector: 'a[href="/linkedin-optimizer"]',
+            position: 'right'
+        },
+        {
+            icon: '🔄',
+            title: 'Career Recovery — Diagnose & Recover',
+            body: 'Applied to 50+ jobs with no offer? The <strong>Career Recovery Agent</strong> diagnoses the root cause — resume, portfolio, interviews, or strategy — and builds a personalised 3-phase recovery plan.',
+            how: '💡 How it works: Input your ATS score, portfolio status & rejection feedback → agent identifies the weakest link → outputs a sequenced 30/60/90-day recovery plan.',
+            selector: 'a[href="/career-recovery"]',
+            position: 'right'
+        },
+        {
+            icon: '🧠',
+            title: 'Shared Memory — Context Flows Everywhere',
+            body: 'Everything you do is stored in <strong>Shared Memory</strong>. The Career Recovery Agent reads your ATS score. The Roadmap Agent reads your Skill Gaps. Agents collaborate so you never repeat yourself.',
+            how: '💡 How it works: Each agent writes its output to Shared Memory → subsequent agents read from it → the Career Orchestrator coordinates who runs when.',
+            selector: null,
+            position: 'center'
+        },
+        {
+            icon: '🖥️',
+            title: 'MCP Hub — See the AI Infrastructure Live',
+            body: 'The <strong>MCP Hub</strong> makes agent orchestration visible. Watch the real-time execution log, see which agent is active, inspect the Shared Memory JSON, and view the task distribution chart.',
+            how: '💡 How it works: Every agent call logs to a Central Execution Log → /mcp/status, /mcp/context, /mcp/tasks endpoints stream live data to the dashboard.',
+            selector: 'a[href="/mcp-hub"]',
+            position: 'right'
+        },
+        {
+            icon: '🎉',
+            title: 'You\'re Ready!',
+            body: 'Start with <strong>My Profile → Resume Studio → Skill Gap → Roadmap</strong>. Each agent builds on the last. The more you use, the smarter the system gets about your goals.',
+            how: '💡 Tip: Click the ❓ button at any time in the bottom-right corner to replay this tour.',
+            selector: null,
+            position: 'center'
+        }
+    ];
+
+    const TOTAL = STEPS.length;
+
+    /* ─── STATE ──────────────────────────────────────────────────────── */
+    let currentStep = -1;   // -1 = welcome screen
+    let active = false;
+    let highlightedEl = null;
+
+    /* ─── DOM REFERENCES (resolved once after DOM ready) ─────────────── */
+    let overlay, backdrop, spotlight, welcomeCard, card,
+        progressFill, stepIcon, stepCounter, stepTitle, stepBody, howBox,
+        dotsContainer, prevBtn, nextBtn, skipBtn, helpBtn,
+        startBtn, skipWelcomeBtn;
+
+    function resolveDOM() {
+        overlay        = document.getElementById('tutorialOverlay');
+        backdrop       = document.getElementById('tutorialBackdrop');
+        spotlight      = document.getElementById('tutorialSpotlight');
+        welcomeCard    = document.getElementById('tutorialWelcomeCard');
+        card           = document.getElementById('tutorialCard');
+        progressFill   = document.getElementById('tutProgressFill');
+        stepIcon       = document.getElementById('tutStepIcon');
+        stepCounter    = document.getElementById('tutStepCounter');
+        stepTitle      = document.getElementById('tutStepTitle');
+        stepBody       = document.getElementById('tutStepBody');
+        howBox         = document.getElementById('tutHowBox');
+        dotsContainer  = document.getElementById('tutDots');
+        prevBtn        = document.getElementById('tutPrevBtn');
+        nextBtn        = document.getElementById('tutNextBtn');
+        skipBtn        = document.getElementById('tutSkipBtn');
+        helpBtn        = document.getElementById('tutorialHelpBtn');
+        startBtn       = document.getElementById('tutStartBtn');
+        skipWelcomeBtn = document.getElementById('tutSkipWelcomeBtn');
+    }
+
+    /* ─── OPEN / CLOSE ───────────────────────────────────────────────── */
+    function openTutorial() {
+        active = true;
+        currentStep = -1;
+        overlay.style.display = 'block';
+        overlay.classList.add('active');
+        showWelcome();
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeTutorial() {
+        active = false;
+        overlay.style.display = 'none';
+        overlay.classList.remove('active');
+        clearHighlight();
+        hideSpotlight();
+        document.body.style.overflow = '';
+        localStorage.setItem('omnipath_tutorial_done', '1');
+    }
+
+    /* ─── WELCOME SCREEN ─────────────────────────────────────────────── */
+    function showWelcome() {
+        welcomeCard.style.display = 'block';
+        card.style.display = 'none';
+        hideSpotlight();
+    }
+
+    /* ─── BUILD STEP DOTS ────────────────────────────────────────────── */
+    function buildDots() {
+        dotsContainer.innerHTML = '';
+        const MAX_DOTS = Math.min(TOTAL, 14);
+        for (let i = 0; i < MAX_DOTS; i++) {
+            const d = document.createElement('span');
+            d.className = 'tut-dot' + (i === currentStep ? ' active' : '');
+            d.dataset.step = i;
+            d.addEventListener('click', function () {
+                goToStep(parseInt(this.dataset.step));
+            });
+            dotsContainer.appendChild(d);
+        }
+    }
+
+    /* ─── SPOTLIGHT HELPERS ──────────────────────────────────────────── */
+    function showSpotlight(rect, padding) {
+        const p = padding || 8;
+        spotlight.style.left   = (rect.left   - p) + 'px';
+        spotlight.style.top    = (rect.top    - p) + 'px';
+        spotlight.style.width  = (rect.width  + p * 2) + 'px';
+        spotlight.style.height = (rect.height + p * 2) + 'px';
+        spotlight.style.display = 'block';
+    }
+
+    function hideSpotlight() {
+        spotlight.style.display = 'none';
+    }
+
+    function clearHighlight() {
+        if (highlightedEl) {
+            highlightedEl.classList.remove('tut-highlighted');
+            highlightedEl.style.zIndex = '';
+            highlightedEl = null;
+        }
+    }
+
+    /* ─── POSITION CARD RELATIVE TO SPOTLIGHT ────────────────────────── */
+    function positionCard(rect, position) {
+        const CARD_W = Math.min(340, window.innerWidth * 0.88);
+        const CARD_H = card.offsetHeight || 280;
+        const PAD    = 16;
+        const vw     = window.innerWidth;
+        const vh     = window.innerHeight;
+
+        // Reset all positional styles
+        card.style.top = card.style.left = card.style.right = card.style.bottom = '';
+        card.style.transform = '';
+
+        if (!rect || position === 'center') {
+            // Centre on screen
+            card.style.top       = '50%';
+            card.style.left      = '50%';
+            card.style.transform = 'translate(-50%, -50%)';
+            return;
+        }
+
+        const spLeft   = parseFloat(spotlight.style.left)   || 0;
+        const spTop    = parseFloat(spotlight.style.top)    || 0;
+        const spWidth  = parseFloat(spotlight.style.width)  || 0;
+        const spHeight = parseFloat(spotlight.style.height) || 0;
+
+        // Prefer placing card to the right of the spotlight
+        let top, left;
+        if (position === 'right' && spLeft + spWidth + PAD + CARD_W < vw) {
+            left = spLeft + spWidth + PAD;
+            top  = Math.max(PAD, Math.min(spTop, vh - CARD_H - PAD));
+        } else if (position === 'left' && spLeft - PAD - CARD_W > 0) {
+            left = spLeft - PAD - CARD_W;
+            top  = Math.max(PAD, Math.min(spTop, vh - CARD_H - PAD));
+        } else if (position === 'bottom') {
+            top  = spTop + spHeight + PAD;
+            left = Math.max(PAD, Math.min(spLeft, vw - CARD_W - PAD));
+        } else {
+            // Fallback: place below, clamped to viewport
+            top  = spTop + spHeight + PAD;
+            left = Math.max(PAD, Math.min(spLeft, vw - CARD_W - PAD));
+            // If doesn't fit below, put above
+            if (top + CARD_H > vh - PAD) {
+                top = Math.max(PAD, spTop - CARD_H - PAD);
+            }
+        }
+
+        // Final clamp so card never goes off-screen
+        left = Math.max(PAD, Math.min(left, vw - CARD_W - PAD));
+        top  = Math.max(PAD, Math.min(top,  vh - CARD_H - PAD));
+
+        card.style.left = left + 'px';
+        card.style.top  = top  + 'px';
+    }
+
+    /* ─── CORE RENDER FUNCTION ───────────────────────────────────────── */
+    function renderStep(n) {
+        const step = STEPS[n];
+
+        // --- Update text content ---
+        stepIcon.textContent   = step.icon;
+        stepTitle.innerHTML    = step.title;
+        stepBody.innerHTML     = step.body;
+        stepCounter.textContent = `Step ${n + 1} of ${TOTAL}`;
+
+        if (step.how) {
+            howBox.innerHTML = step.how;
+            howBox.classList.add('show');
+        } else {
+            howBox.classList.remove('show');
+        }
+
+        // --- Progress bar ---
+        progressFill.style.width = (((n + 1) / TOTAL) * 100) + '%';
+
+        // --- Navigation buttons ---
+        prevBtn.disabled = (n === 0);
+        nextBtn.textContent = (n === TOTAL - 1) ? '🎉 Done' : 'Next →';
+
+        // --- Dots ---
+        buildDots();
+
+        // --- Clear previous highlight ---
+        clearHighlight();
+
+        // --- Spotlight & card positioning ---
+        if (step.selector) {
+            const el = document.querySelector(step.selector);
+            if (el) {
+                // Scroll element into view smoothly
+                el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                // Wait a tick for scroll to settle, then compute position
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () {
+                        const rect = el.getBoundingClientRect();
+                        showSpotlight(rect);
+                        el.classList.add('tut-highlighted');
+                        highlightedEl = el;
+                        positionCard(rect, step.position);
+                        lucide.createIcons();
+                    });
+                });
+            } else {
+                // Element not found — fallback to centre
+                hideSpotlight();
+                positionCard(null, 'center');
+                lucide.createIcons();
+            }
+        } else {
+            hideSpotlight();
+            clearHighlight();
+            positionCard(null, 'center');
+            lucide.createIcons();
+        }
+    }
+
+    /* ─── NAVIGATION ─────────────────────────────────────────────────── */
+    function goToStep(n) {
+        if (n < 0 || n >= TOTAL) return;
+        currentStep = n;
+        renderStep(currentStep);
+    }
+
+    function next() {
+        if (currentStep === -1) {
+            // From welcome → step 0
+            welcomeCard.style.display = 'none';
+            card.style.display = 'block';
+            currentStep = 0;
+            renderStep(0);
+            return;
+        }
+        if (currentStep >= TOTAL - 1) {
+            closeTutorial();
+            return;
+        }
+        currentStep += 1;
+        renderStep(currentStep);
+    }
+
+    function prev() {
+        if (currentStep <= 0) return;
+        currentStep -= 1;
+        renderStep(currentStep);
+    }
+
+    /* ─── BIND EVENTS (once, not in render loop) ─────────────────────── */
+    function bindEvents() {
+        nextBtn.addEventListener('click',        next);
+        prevBtn.addEventListener('click',        prev);
+        skipBtn.addEventListener('click',        closeTutorial);
+        startBtn.addEventListener('click',       next);
+        skipWelcomeBtn.addEventListener('click', closeTutorial);
+        helpBtn.addEventListener('click',        openTutorial);
+
+        // Keyboard: → / Space = next, ← = prev, Esc = close
+        document.addEventListener('keydown', function (e) {
+            if (!active) return;
+            if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+            else if (e.key === 'ArrowLeft')               { e.preventDefault(); prev(); }
+            else if (e.key === 'Escape')                  { closeTutorial(); }
+        });
+
+        // Click on backdrop (not card/spotlight) to close
+        backdrop.addEventListener('click', function (e) {
+            if (e.target === backdrop) closeTutorial();
+        });
+    }
+
+    /* ─── INIT ───────────────────────────────────────────────────────── */
+    function init() {
+        resolveDOM();
+        bindEvents();
+        lucide.createIcons();
+
+        // Auto-start for first-time visitors
+        if (!localStorage.getItem('omnipath_tutorial_done')) {
+            // Small delay so page fully paints first
+            setTimeout(openTutorial, 800);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    // Expose globally so other scripts can trigger it
+    window.openTutorial = openTutorial;
+
+})();
 </script>
 
 </body>

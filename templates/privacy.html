@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+
+{% block title %}Privacy Policy{% endblock %}
+{% block page_title %}Privacy Policy{% endblock %}
+{% block page_breadcrumb %}Legal / Privacy Policy{% endblock %}
+
+{% block content %}
+<style>
+.privacy-hero {
+    text-align: center;
+    padding: 24px 0 40px;
+    margin-bottom: 36px;
+    border-bottom: 1px solid var(--border-color);
+}
+.privacy-hero .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: var(--green-light);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 18px;
+}
+.privacy-grid {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 28px;
+    align-items: start;
+}
+.privacy-toc {
+    background: var(--surface-light);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 20px;
+    position: sticky;
+    top: 90px;
+}
+.privacy-toc-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+.privacy-toc a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 7px 10px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    margin-bottom: 2px;
+}
+.privacy-toc a:hover, .privacy-toc a.active {
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary-light);
+}
+.privacy-content { display: flex; flex-direction: column; gap: 28px; }
+.privacy-section {
+    background: var(--surface-light);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 28px 32px;
+    scroll-margin-top: 90px;
+}
+.privacy-section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+.privacy-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.privacy-section-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.privacy-section p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    margin-bottom: 12px;
+}
+.privacy-section p:last-child { margin-bottom: 0; }
+.privacy-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.privacy-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+.privacy-list li::before {
+    content: '';
+    width: 6px; height: 6px;
+    background: var(--primary-light);
+    border-radius: 50%;
+    margin-top: 7px;
+    flex-shrink: 0;
+}
+.highlight-box {
+    background: rgba(16, 185, 129, 0.06);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--green-light);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.6;
+}
+.warn-box {
+    background: rgba(245, 158, 11, 0.06);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--gold-light);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.6;
+}
+.delete-data-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: var(--red-light);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 14px;
+}
+.delete-data-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: translateY(-1px);
+}
+.last-updated {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+@media (max-width: 900px) {
+    .privacy-grid { grid-template-columns: 1fr; }
+    .privacy-toc { position: static; }
+}
+</style>
+
+<!-- Hero -->
+<div class="privacy-hero">
+    <div class="badge"><i data-lucide="shield-check" style="width:14px;"></i> Privacy First</div>
+    <h1 class="page-title text-gradient" style="font-size:32px; margin-bottom: 10px;">Privacy Policy</h1>
+    <p class="text-muted" style="max-width:540px; margin:0 auto;">We built OmniPath AI to protect your career data, not exploit it. Here is exactly what we do and don't do with your information.</p>
+    <p class="last-updated">Last updated: July 2025</p>
+</div>
+
+<div class="privacy-grid">
+
+    <!-- Table of Contents -->
+    <div class="privacy-toc">
+        <div class="privacy-toc-title">Contents</div>
+        <a href="#data-collected"><i data-lucide="database" style="width:14px;"></i> Data We Collect</a>
+        <a href="#data-stored"><i data-lucide="hard-drive" style="width:14px;"></i> How Data Is Stored</a>
+        <a href="#data-not-stored"><i data-lucide="shield-off" style="width:14px;"></i> What We Don't Store</a>
+        <a href="#data-sharing"><i data-lucide="share-2" style="width:14px;"></i> Data Sharing</a>
+        <a href="#security"><i data-lucide="lock" style="width:14px;"></i> Security Measures</a>
+        <a href="#your-rights"><i data-lucide="user-check" style="width:14px;"></i> Your Rights</a>
+        <a href="#cookies"><i data-lucide="cookie" style="width:14px;"></i> Cookies</a>
+        <a href="#contact"><i data-lucide="mail" style="width:14px;"></i> Contact</a>
+    </div>
+
+    <!-- Content -->
+    <div class="privacy-content">
+
+        <!-- Data We Collect -->
+        <div class="privacy-section" id="data-collected">
+            <div class="privacy-section-header">
+                <div class="privacy-icon" style="background:rgba(99,102,241,0.12);color:var(--primary-light);"><i data-lucide="database" style="width:18px;"></i></div>
+                <div class="privacy-section-title">Data We Collect</div>
+            </div>
+            <p>OmniPath AI collects only the information you voluntarily provide during your session to power the AI agents. This includes:</p>
+            <ul class="privacy-list">
+                <li>Your <strong>name</strong> and <strong>email address</strong> from the onboarding form (for personalisation only)</li>
+                <li>Your <strong>target role, sector, skills, and experience level</strong> to provide contextual career guidance</li>
+                <li>Your <strong>resume text</strong>, extracted in-memory when you upload a PDF for analysis</li>
+                <li>Your <strong>interview responses</strong> during a coaching session</li>
+                <li>Your <strong>LinkedIn URL</strong> and <strong>portfolio URL</strong> if provided for profile optimisation</li>
+            </ul>
+            <div class="highlight-box">
+                <i data-lucide="info" style="width:16px; flex-shrink:0;"></i>
+                All data you provide is used <strong>exclusively</strong> to power the AI agents on your behalf. It is never used for advertising, profiling, or sold to third parties.
+            </div>
+        </div>
+
+        <!-- How Data Is Stored -->
+        <div class="privacy-section" id="data-stored">
+            <div class="privacy-section-header">
+                <div class="privacy-icon" style="background:rgba(6,182,212,0.12);color:var(--cyan-light);"><i data-lucide="hard-drive" style="width:18px;"></i></div>
+                <div class="privacy-section-title">How Data Is Stored</div>
+            </div>
+            <p>OmniPath AI uses <strong>no database</strong>. All data lives exclusively in your <strong>server-side Flask session</strong>, which is:</p>
+            <ul class="privacy-list">
+                <li>Stored in an <strong>encrypted, signed cookie</strong> on your browser using a server-side secret key</li>
+                <li><strong>Automatically expired after 1 hour</strong> of inactivity — your data is deleted by the server at that point</li>
+                <li>Isolated strictly to <strong>your session only</strong> — no other user can see your data</li>
+                <li>Never written to disk, a database, or any external service</li>
+            </ul>
+            <div class="warn-box">
+                <i data-lucide="alert-triangle" style="width:16px; flex-shrink:0;"></i>
+                Because data is session-only, it will be lost when you close your browser, your session expires, or the server restarts. <strong>There is no persistence by design.</strong>
+            </div>
+        </div>
+
+        <!-- What We Don't Store -->
+        <div class="privacy-section" id="data-not-stored">
+            <div class="privacy-section-header">
+                <div class="privacy-icon" style="background:rgba(16,185,129,0.12);color:var(--green-light);"><i data-lucide="shield-off" style="width:18px;"></i></div>
+                <div class="privacy-section-title">What We Don't Store</div>
+            </div>
+            <p>To be explicit about what we will never do:</p>
+            <ul class="privacy-list">
+                <li>We do <strong>not</strong> store your resume PDF on our servers — it is parsed in-memory and discarded</li>
+                <li>We do <strong>not</strong> store your data in any database or file system</li>
+                <li>We do <strong>not</strong> use analytics trackers, advertising pixels, or third-party scripts that collect data</li>
+                <li>We do <strong>not</strong> sell, rent, or share your personal information with any third party</li>
+                <li>We do <strong>not</strong> use your data to train AI models</li>
+                <li>We do <strong>not</strong> require account creation or authentication to use the platform</li>
+            </ul>
+        </div>
+
+        <!-- Data Sharing -->
+        <div class="privacy-section" id="data-sharing">
+            <div class="privacy-section-header">
+                <div class="privacy-icon" style="background:rgba(245,158,11,0.12);color:var(--gold-light);"><i data-lucide="share-2" style="width:18px;"></i></div>
+                <div class="privacy-section-title">Data Sharing</div>
+            </div>
+            <p>OmniPath AI shares <strong>zero user data</strong> with third parties. The platform runs entirely on self-contained, rule-based heuristic AI logic. There are no calls to external AI APIs (such as OpenAI or Google AI). Your data never leaves the server during processing.</p>
+            <div class="highlight-box">
+                <i data-lucide="check-circle" style="width:16px; flex-shrink:0;"></i>
+                No third parties. No external APIs. No data brokers. Your career data stays completely within this application.
+            </div>
+        </div>
+
+        <!-- Security Measures -->
+        <div class="privacy-section" id="security">
+            <div class="privacy-section-header">
+                <div class="privacy-icon" style="background:rgba(99,102,241,0.12);color:var(--primary-light);"><i data-lucide="lock" style="width:18px;"></i></div>
+                <div class="privacy-section-title">Security Measures</div>
+            </div>
+            <p>We have implemented enterprise-grade security protections across the entire application stack:</p>
+            <ul class="privacy-list">
+                <li><strong>HTTP Security Headers</strong> (CSP, X-Frame-Options, X-Content-Type-Options) to prevent XSS and clickjacking</li>
+                <li><strong>Rate Limiting</strong> on all API endpoints to prevent abuse and denial-of-service attacks</li>
+                <li><strong>Session Cookie Hardening</strong> (HttpOnly, SameSite=Lax) to prevent cookie theft and CSRF attacks</li>
+                <li><strong>PDF Validation</strong> — file type, MIME type, magic bytes, and page-count limits to prevent malicious uploads</li>
+                <li><strong>Input Sanitisation</strong> — all user inputs are HTML-escaped and length-validated before processing</li>
+                <li><strong>PII Redaction</strong> in the infrastructure dashboard — email and URLs are masked before display</li>
+                <li><strong>Secure secret key management</strong> via environment variables</li>
+            </ul>
+        </div>
+
+        <!-- Your Rights -->
+        <div class="privacy-section" id="your-rights">
+            <div class="privacy-section-header">
+                <div class="privacy-icon" style="background:rgba(239,68,68,0.12);color:var(--red-light);"><i data-lucide="user-check" style="width:18px;"></i></div>
+                <div class="privacy-section-title">Your Rights & Data Deletion</div>
+            </div>
+            <p>You have full control over your data. Because we use no database, you can delete all of your session data instantly by clearing your session. All profile data, resume analysis results, and execution history will be permanently removed from the server.</p>
+            <button class="delete-data-btn" id="clearDataBtn" onclick="clearMyData()">
+                <i data-lucide="trash-2" style="width:14px;"></i>
+                Delete All My Data Now
+            </button>
+        </div>
+
+        <!-- Cookies -->
+        <div class="privacy-section" id="cookies">
+            <div class="privacy-section-header">
+                <div class="privacy-icon" style="background:rgba(245,158,11,0.12);color:var(--gold-light);"><i data-lucide="cookie" style="width:18px;"></i></div>
+                <div class="privacy-section-title">Cookies</div>
+            </div>
+            <p>OmniPath AI uses <strong>one single cookie</strong> — the Flask session cookie named <code style="background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:4px;font-size:12px;">session</code>. This cookie:</p>
+            <ul class="privacy-list">
+                <li>Is <strong>strictly necessary</strong> to maintain your session state during use</li>
+                <li>Contains only an <strong>encrypted reference</strong> to your server-side session data</li>
+                <li>Is set with <code style="background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:4px;font-size:12px;">HttpOnly</code> and <code style="background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:4px;font-size:12px;">SameSite=Lax</code> security flags</li>
+                <li>Expires after <strong>1 hour</strong> of inactivity</li>
+            </ul>
+            <p>We do not use tracking cookies, advertising cookies, or any third-party analytics cookies.</p>
+        </div>
+
+        <!-- Contact -->
+        <div class="privacy-section" id="contact">
+            <div class="privacy-section-header">
+                <div class="privacy-icon" style="background:rgba(6,182,212,0.12);color:var(--cyan-light);"><i data-lucide="mail" style="width:18px;"></i></div>
+                <div class="privacy-section-title">Contact</div>
+            </div>
+            <p>OmniPath AI is an open-source project built for the Google AI Agents Capstone. If you have any privacy concerns or questions, you can raise an issue in the project repository or contact the project maintainer directly.</p>
+            <p>This privacy policy applies to the OmniPath AI application as deployed. It may be updated periodically to reflect security improvements.</p>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function clearMyData() {
+    const btn = document.getElementById('clearDataBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i data-lucide="loader" style="width:14px;"></i> Clearing...';
+    lucide.createIcons();
+    
+    try {
+        const res = await fetch('/api/clear-session', { method: 'POST' });
+        const data = await res.json();
+        if (data.status === 'success') {
+            btn.innerHTML = '<i data-lucide="check-circle" style="width:14px;"></i> Data Cleared Successfully';
+            btn.style.background = 'rgba(16,185,129,0.1)';
+            btn.style.borderColor = 'rgba(16,185,129,0.35)';
+            btn.style.color = 'var(--green-light)';
+            // Also clear localStorage
+            localStorage.clear();
+        }
+    } catch(e) {
+        btn.innerHTML = '<i data-lucide="x-circle" style="width:14px;"></i> Failed — try again';
+        btn.disabled = false;
+    }
+    lucide.createIcons();
+}
+
+// Active TOC highlighting on scroll
+const sections = document.querySelectorAll('.privacy-section');
+const tocLinks = document.querySelectorAll('.privacy-toc a');
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            tocLinks.forEach(l => l.classList.remove('active'));
+            const link = document.querySelector(`.privacy-toc a[href="#${entry.target.id}"]`);
+            if (link) link.classList.add('active');
+        }
+    });
+}, { threshold: 0.4 });
+
+sections.forEach(s => observer.observe(s));
+</script>
+{% endblock %}
