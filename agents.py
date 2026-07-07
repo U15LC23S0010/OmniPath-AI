@@ -301,12 +301,13 @@ class LinkedInOptimizerAgent(BaseAgent):
         start_time = time.time()
         shared_memory.log(f"{self.name} started.")
         
-        role = kwargs.get('role', shared_memory.profile.get('role', ''))
-        url = kwargs.get('url', '')
+        role         = kwargs.get('role', shared_memory.profile.get('role', ''))
+        linkedin_url = kwargs.get('linkedin_url', '')
         skills_input = kwargs.get('skills', shared_memory.profile.get('skills', ''))
-        achievement = kwargs.get('achievement', shared_memory.profile.get('achievement', ''))
+        achievement  = kwargs.get('achievements', shared_memory.profile.get('achievement', ''))
         
-        result = optimize_linkedin(role, url, skills_input, achievement)
+        result = optimize_linkedin(role, linkedin_url=linkedin_url, skills=skills_input,
+                                   achievements=achievement)
         shared_memory.linkedin_optimization = result
         
         exec_time = time.time() - start_time

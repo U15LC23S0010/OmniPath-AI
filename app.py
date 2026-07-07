@@ -673,19 +673,20 @@ def linkedin_api():
     raw = request.get_json(silent=True) or {}
     data = sanitize_input(raw)
     try:
-        role     = validate_str(data.get('target_role', data.get('role','')), 'role',         MAX_ROLE_LEN)
-        skills   = validate_str(data.get('skills', ''),                        'skills',       MAX_SKILLS_LEN)
-        achieve  = validate_str(data.get('achievements', ''),                  'achievements', MAX_FIELD_LEN)
-        url      = validate_url(validate_str(data.get('linkedin_url',''),      'linkedin_url', 200))
+        role    = validate_str(data.get('target_role', data.get('role', '')), 'role',         MAX_ROLE_LEN)
+        url     = validate_str(data.get('linkedin_url', ''),                  'linkedin_url', 300)
+        skills  = validate_str(data.get('skills', ''),                        'skills',       MAX_SKILLS_LEN)
+        achieve = validate_str(data.get('achievements', ''),                  'achievements', MAX_FIELD_LEN)
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
 
     sm = get_shared_memory()
     result = orchestrator.execute_task(sm, 'optimize_linkedin',
-                                       role=role, skills=skills,
-                                       achievements=achieve, url=url)
+                                       role=role, linkedin_url=url,
+                                       skills=skills, achievements=achieve)
     save_shared_memory(sm)
     return jsonify(result)
+
 
 
 # ── Layer 9: Session Clear (Privacy Right to Erasure) ─────────────────
