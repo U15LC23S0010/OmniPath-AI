@@ -22,6 +22,7 @@ import PyPDF2
 from flask import Flask, render_template, request, jsonify, send_from_directory, session
 from markupsafe import escape
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import HTTPException
 
 from agents import SharedMemory, CareerOrchestrator
 
@@ -37,16 +38,23 @@ security_log = logging.getLogger('omnipath.security')
 app = Flask(__name__)
 
 # ── Layer 4 fallback guard — secret key must be set in env ─────────────
-_secret = os.environ.get('FLASK_SECRET_KEY', '')
+_secret = os.environ.get('FLASK_SECRET_KEY', '').strip()
 if not _secret:
-    security_log.warning("FLASK_SECRET_KEY not set — using insecure default. Set it in production!")
-    _secret = 'omnipath-ai-insecure-fallback-change-me'
+    if os.environ.get('FLASK_ENV', '').lower() == 'production':
+        raise RuntimeError(
+            "FLASK_SECRET_KEY must be configured when FLASK_ENV=production."
+        )
+    security_log.warning(
+        "FLASK_SECRET_KEY is not set. Using a development-only fallback; "
+        "configure FLASK_SECRET_KEY before deployment."
+    )
+    _secret = 'dev-only-change-this-secret-before-deployment'
 app.secret_key = _secret
 
 # ── Layer 3: Hardened Session Cookies ─────────────────────────────────
 app.config['SESSION_COOKIE_HTTPONLY'] = True       # JS cannot read cookie
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'     # CSRF mitigation
-app.config['SESSION_COOKIE_SECURE'] = False         # Set True when HTTPS is enabled
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV', '').lower() == 'production'  # HTTPS in production
 app.config['PERMANENT_SESSION_LIFETIME'] = datetime.timedelta(hours=1)
 
 # ── File Upload Limit (Layer 5) ────────────────────────────────────────
@@ -239,7 +247,13 @@ def validate_and_extract_pdf(file_storage) -> str:
         security_log.warning(f"PDF too large: {len(reader.pages)} pages, file={filename}")
         raise ValueError(f"PDF exceeds maximum of {MAX_PDF_PAGES} pages.")
 
-    text = ''.join(p.extract_text() or '' for p in reader.pages)
+    text = ''.join(p.extract_text() or '' for p in reader.pages).strip()
+    if not text:
+        raise ValueError(
+            "No readable text was found in this PDF. If it is scanned, use an OCR-enabled PDF."
+        )
+    if len(text) > MAX_TEXT_LEN:
+        text = text[:MAX_TEXT_LEN]
     return text
 
 
@@ -263,9 +277,18 @@ def too_many_requests(e):
 
 @app.errorhandler(Exception)
 def handle_exception(e):
-    # Layer 8: Log actual error internally, never expose stack trace to client
-    security_log.error(f"Unhandled exception: {type(e).__name__}: {e}")
-    return jsonify({'error': 'An internal error occurred. Please try again.'}), 500
+    # Keep Flask HTTP errors (404, 405, etc.) at their proper status codes.
+    if isinstance(e, HTTPException):
+        return jsonify({
+            'status': 'error',
+            'error': e.description
+        }), e.code
+
+    security_log.exception("Unhandled application exception")
+    return jsonify({
+        'status': 'error',
+        'error': 'An internal server error occurred. Please try again.'
+    }), 500
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -701,7 +724,15 @@ def clear_session():
 # ── Catch-all for undefined /api/* paths ──────────────────────────────
 @app.route('/api/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE'])
 def catch_all(path):
-    return jsonify({"status": "success", "message": "OmniPath Agent responded."})
+    app.logger.warning(
+        "Unknown API endpoint: %s %s",
+        request.method,
+        request.path
+    )
+    return jsonify({
+        "error": "API endpoint not found",
+        "path": request.path
+    }), 404
 
 
 # ══════════════════════════════════════════════════════════════════
