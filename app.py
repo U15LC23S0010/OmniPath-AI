@@ -564,7 +564,7 @@ def career_recovery_api():
     try:
         role       = validate_str(data.get('role', ''),               'role',               MAX_ROLE_LEN)
         skills     = validate_str(data.get('skills', ''),             'skills',             MAX_SKILLS_LEN)
-        ats        = validate_str(str(data.get('ats_score', '')),      'ats_score',          10)
+        ats = validate_str(str(data.get('ats_score', '')), 'ats_score', MAX_FIELD_LEN)
         port_stat  = validate_str(data.get('portfolio_status', ''),   'portfolio_status',   MAX_FIELD_LEN)
         iv_fb      = validate_str(data.get('interview_feedback', ''), 'interview_feedback', MAX_FIELD_LEN)
     except ValueError as e:

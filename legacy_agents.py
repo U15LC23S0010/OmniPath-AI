@@ -1288,12 +1288,22 @@ def generate_recovery_plan(role, skills, ats_score, portfolio_status, interview_
     # 1. Diagnostics (Root Cause Analysis)
     diagnostics = []
     
-    # Analyze ATS
-    ats = ats_score.lower() if ats_score else ''
-    if ats in ['low', 'poor', 'needs work', '< 60%']:
-        diagnostics.append({"area": "Resume / ATS Compatibility", "issue": "Your resume is likely being filtered out before human review.", "severity": "High"})
-    elif ats in ['medium', 'fair', '60-80%']:
-        diagnostics.append({"area": "Resume / ATS Compatibility", "issue": "Your resume passes some filters but may lack role-specific keywords.", "severity": "Medium"})
+    # Analyze ATS score
+    ats = str(ats_score or "").strip().lower()
+
+    if any(value in ats for value in ("low", "poor", "needs work", "< 60%")):
+        diagnostics.append({
+        "area": "Resume / ATS Compatibility",
+        "issue": "Your resume may be filtered out before human review. Improve role-specific keywords, formatting, and measurable achievements.",
+        "severity": "High"
+    })
+    elif any(value in ats for value in ("medium", "fair", "60-80%")):
+       diagnostics.append({
+        "area": "Resume / ATS Compatibility",
+        "issue": "Your resume may need stronger role-specific keywords and clearer evidence of relevant skills.",
+        "severity": "Medium"
+    })
+    
     
     # Analyze Portfolio
     port = portfolio_status.lower() if portfolio_status else ''
